@@ -172,17 +172,24 @@ MODALS.emp = (m) => {
   const e = S.emps[m.e]; if (!e) return '';
   const mw = marketWage(e.role, e.city, e.skill);
   const others = e.biz === 'hq' ? [] : S.biz.filter(x => x.id !== e.biz && x.city === e.city);
-  return sheet(esc(empName(e)), `<div class="kpis">
-      ${kpi('Competenza', Math.round(e.skill), '', '', 'competenza')}${kpi('Morale', Math.round(e.morale), '', e.morale < 40 ? 'neg' : '', 'morale')}${kpi('Stanchezza', Math.round(e.fatigue), '', e.fatigue > 70 ? 'neg' : '', 'stanchezza')}${kpi('Ferie', Math.floor(e.holidays) + ' gg')}</div>
-    <div class="row mb">${badge(ROLES[e.role].name, 'b')} ${badge(e.age + ' anni')} ${e.traits.map(t => `<span class="badge p" title="${esc(TRAITS[t].d)}">${esc(TRAITS[t].n)}</span>`).join(' ')}</div>
-    ${table(['Voce', ['Valore', 'n']], [
-      tr([`Contratto ${hb('contratto')}`, [esc(CONTRACTS[e.contract]) + (e.end ? ' · ' + fmtDateShort(e.end) : ''), 'n']]),
-      tr([`Stipendio ${hb('stipendio')}`, [numIn('empWage', e.wage, { e: e.id }, 'step="10" min="500"'), 'n']]),
-      tr(['Mercato', [eur0(mw), 'n']]), tr(['Costo/mese', [eur0(empMonthlyCost(e) * 1.37), 'n']]), tr(['Turno', [shiftLabel(e) + ' · ' + weeklyHours(e) + ' h', 'n']]), tr(['TFR', [eur0(e.tfr || 0), 'n']])])}
+  const hasShift = e.biz !== 'hq';
+  const tab = m.tab || (hasShift ? 'turno' : 'paga');
+  const tabs = [hasShift && ['turno', '🗓️ Turno'], ['paga', '💶 Paga'], ['altro', '🎓 Altro']].filter(Boolean);
+  const stat = (l, v, bad, k) => `<button class="ovc ov-${bad ? 'bad' : 'ok'}" data-a="help" data-k="${k}"><span class="l">${l}</span><b>${v}</b></button>`;
+  let body = '';
+  if (tab === 'turno') body = `<div class="emp-shift">${dayToggles('empDay', e.wdays, { e: e.id })}<div class="row">${stepper('empStart', { e: e.id }, String(e.start || 0).padStart(2, '0') + ':00', 'inizio')}${stepper('empHrs', { e: e.id }, e.hours + ' h', 'al giorno')}</div><small class="muted">${weeklyHours(e)} h/settimana${weeklyHours(e) > 40 ? ' · straordinari' : ''}</small></div>`;
+  else if (tab === 'paga') body = `<div class="kvl"><span>Stipendio ${hb('stipendio')}</span>${numIn('empWage', e.wage, { e: e.id }, 'step="10" min="500" style="width:6.5rem"')}</div>
+    <div class="kvl"><span>Mercato</span><b class="${e.wage < mw * 0.95 ? 'neg' : ''}">${eur0(mw)}</b></div>
+    <div class="kvl"><span>Costo/mese</span><b>${eur0(empMonthlyCost(e) * 1.37)}</b></div>
+    <div class="kvl"><span>Contratto ${hb('contratto')}</span><b>${esc(CONTRACTS[e.contract])}${e.end ? ' · ' + fmtDateShort(e.end) : ''}</b></div>`;
+  else body = `<div class="row mb">${badge(e.age + ' anni')} ${e.traits.map(t => `<span class="badge p" title="${esc(TRAITS[t].d)}">${esc(TRAITS[t].n)}</span>`).join(' ')} ${badge('Ferie ' + Math.floor(e.holidays) + ' gg')}</div>
     <h4>Formazione ${hb('formazione')}</h4><div class="seg">${COURSES.map(c => btn(`${c.n} · ${eur0(c.cost * (hasResearch('formazione') ? 0.7 : 1) * 1.22)}`, 'empTrain', { e: e.id, c: c.id }, 'sm', e.skill >= c.max || (c.min && e.skill < c.min) || e.trainUntil > S.day)).join('')}</div>
-    ${others.length ? `<h4>Trasferisci</h4>${select('empMove', [['', '—'], ...others.map(o => [o.id, o.name])], '', { e: e.id })}` : ''}`,
-    btn('Ferie 7 gg', 'empHoliday', { e: e.id }, '', e.holidays < 5 || empStatus(e) !== 'Attivo') + btn('Licenzia', 'empFire', { e: e.id }, 'danger'));
+    ${others.length ? `<h4>Trasferisci</h4>${select('empMove', [['', '—'], ...others.map(o => [o.id, o.name])], '', { e: e.id })}` : ''}`;
+  return sheet(`${esc(empName(e))} <small class="muted">${esc(ROLES[e.role].name)}</small>`, `<div class="ovcs mb">${stat('Competenza', Math.round(e.skill), false, 'competenza')}${stat('Morale', Math.round(e.morale), e.morale < 40, 'morale')}${stat('Stanchezza', Math.round(e.fatigue), e.fatigue > 70, 'stanchezza')}</div>
+    <div class="seg mb">${tabs.map(([k, l]) => btn(l, 'empTab', { t: k }, 'sm ' + (tab === k ? 'on' : ''))).join('')}</div>${body}`,
+    tab === 'altro' ? btn('Ferie 7 gg', 'empHoliday', { e: e.id }, '', e.holidays < 5 || empStatus(e) !== 'Attivo') + btn('Licenzia', 'empFire', { e: e.id }, 'danger') : btn('OK', 'closeModal', {}, 'pri'));
 };
+ACT.empTab = (d) => { if (UI.modal) { UI.modal.tab = d.t; render(); } };
 CHG.empWage = (v, d) => {
   const e = S.emps[d.e]; if (!e) return;
   const nv = Math.max(500, Math.round(+v || e.wage));
@@ -308,6 +315,7 @@ ACT.prodNew = () => { const b = curBiz(); const avail = bizType(b).products.filt
 ACT.prodEdit = (d) => { const b = curBiz(); openModal('prodEdit', { bizId: b.id, draft: deepClone(b.products.find(x => x.id === d.p)), isNew: false }); };
 CHG.peTpl = (v) => { const b = getBiz(UI.modal.bizId); UI.modal.draft = productFromTemplate(bizType(b).products.find(x => x.id === v), b); render(); };
 CHG.peName = (v) => { UI.modal.draft.name = v; };
+CHG.peOn = (v, d, el) => { UI.modal.draft.on = el.checked; render(); };
 CHG.pePrice = (v) => { UI.modal.draft.price = Math.max(0, round2(+v || 0)); render(); };
 CHG.peQty = (v, d) => { UI.modal.draft.r[d.m] = Math.max(0, +v || 0); if (!UI.modal.draft.r[d.m]) delete UI.modal.draft.r[d.m]; render(); };
 CHG.peAdd = (v) => { if (v) { UI.modal.draft.r[v] = UI.modal.draft.r[v] || 0.05; render(); } };
@@ -330,6 +338,7 @@ MODALS.prodEdit = (M) => {
   const canDel = !M.isNew && b.products.filter(x => x.tpl === p.tpl).length > 1;
   return sheet(M.isNew ? 'Nuovo prodotto' : 'Prodotto', `
     ${M.isNew ? `<label class="field"><span>Categoria</span>${select('peTpl', avail.map(x => [x.id, x.n]), p.tpl)}</label>` : ''}
+    ${M.isNew ? '' : `<label class="row mb"><input type="checkbox" data-c="peOn" ${p.on ? 'checked' : ''}> In vendita</label>`}
     <label class="field"><span>Nome</span><input id="pe_name" data-c="peName" value="${esc(p.name)}" maxlength="40"></label>
     <h4>Ricetta ${hb('ricetta')}</h4>
     ${table(['Ingrediente', ['Q.tà', 'n'], ['€', 'n'], ''], Object.entries(p.r).map(([m, q]) => tr([esc(MATERIALS[m].name), [numIn('peQty', q, { m }, 'step="0.005" min="0" style="width:5.5rem"') + ' ' + MATERIALS[m].unit, 'n'], [eur2(q * MATERIALS[m].price * S.eco.priceLevel), 'n'], btn('✕', 'peRemove', { m }, 'sm')])), { empty: 'Solo lavoro' })}
@@ -393,10 +402,12 @@ MODALS.rs = (M) => {
   const r = b.restock[m] || { on: false, min: 0, target: 0, sup: m + '_std' };
   const sups = [...suppliersFor(m).map(s => [s.id, `${s.tierName} · ${eur2(materialPrice(m, s))}`]), ...internalSuppliers(b, m).map(s => [s.id, `${s.name} · ${eur2(s.unit)}`])];
   const sg = suggestRestock(b, m);
-  return sheet(esc(MATERIALS[m].name), `<label class="row mb"><input type="checkbox" data-c="rsOn" data-m="${m}" ${r.on ? 'checked' : ''}> Riordino automatico</label>
+  const st = stockOf(b, m), use = avgUsage(b, m), inc = incoming(b, m);
+  return sheet(esc(MATERIALS[m].name), `<div class="kpis">${kpi('Giacenza', num1(st) + ' ' + MATERIALS[m].unit, '', st <= 0 ? 'neg' : '')}${kpi('Durata', use > 0 ? num1(st / use) + ' gg' : '–', '', use > 0 && st / use < 1.5 ? 'neg' : '')}${kpi('In arrivo', num1(inc))}</div>
+    <label class="row mb"><input type="checkbox" data-c="rsOn" data-m="${m}" ${r.on ? 'checked' : ''}> Riordino automatico</label>
     <div class="row"><label class="field"><span>Sotto</span>${numIn('rsMin', r.min, { m })}</label><label class="field"><span>Porta a</span>${numIn('rsTarget', r.target, { m })}</label></div>
     <small class="muted">Consigliato: ${sg.min} → ${sg.target}</small>
-    <label class="field mt"><span>Fornitore ${hb('fornitori')}</span>${select('rsSup', sups, r.sup || m + '_std', { m })}</label>`, btn('OK', 'closeModal', {}, 'pri'), { help: 'riordino' });
+    <label class="field mt"><span>Fornitore ${hb('fornitori')}</span>${select('rsSup', sups, r.sup || m + '_std', { m })}</label>`, btn('Ordina ora', 'orderOpen', { m }) + btn('OK', 'closeModal', {}, 'pri'), { help: 'riordino' });
 };
 function rsOf(m) { const b = curBiz(); return b.restock[m] || (b.restock[m] = { on: true, min: 0, target: 0, sup: m + '_std' }); }
 CHG.rsOn = (v, d, el) => { const b = curBiz(); const r = rsOf(d.m); r.on = el.checked; if (r.on && !r.target) { const s = suggestRestock(b, d.m); r.min = s.min; r.target = s.target; } commit(); };

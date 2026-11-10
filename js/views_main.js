@@ -102,13 +102,6 @@ ACT.setFont = (d) => { const m = getMeta(); setMeta({ font: clamp((m.font || 16)
 ACT.quitMenu = () => { if (S && !S.over) saveGame(); S = null; UI.modal = null; UI.start.mode = 'menu'; render(); };
 
 // ===================== HOME =====================
-VIEWS.dash = () => {
-  let h = '';
-  h += bizTiles();
-  const dl = deadlines(30).filter(x => x.v);
-  if (dl.length) h += sec('Scadenze', 'scadenze', table(['Data', 'Voce', ['€', 'n']], dl.slice(0, 6).map(x => tr([fmtDateShort(x.d).slice(0, 5), esc(x.t), [eur0(x.v), 'n']]))), '', { closed: true, sum: `${fmtDateShort(dl[0].d).slice(0, 5)} · ${esc(dl[0].t)}` });
-  return h;
-};
 function advSum(red, yel) { return (red ? `<span class="badge r">${red}</span> ` : '') + (yel ? `<span class="badge y">${yel}</span>` : '') || '<span class="pos">✓</span>'; }
 /** riquadri colorati delle attività */
 function bizTiles(withNew = true) {

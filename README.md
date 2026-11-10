@@ -20,18 +20,14 @@ I salvataggi restano nel browser (5 slot e salvataggio automatico). Per fare un 
 
 ## Interfaccia
 
-- **Pensata per il telefono:**
-  - menu in basso (Home, Attività, Personale, Finanza, Menu);
-  - finestre che compaiono dal basso;
-  - tabelle che diventano schede.
+- **Panoramica (Home):** tutto in una schermata corta.
+  - Ogni attività ha 5 riquadri: Turni, Persone, Prezzi (o Produzione), Scorte, Macchine.
+  - Verde = tutto ok, rosso = qualcosa da sistemare.
+  - Tocca un riquadro per vedere i suoi elementi. Tocca un elemento (persona, prodotto, materiale, macchina, giorno) per aprirne la scheda e cambiarlo.
+- **Pensata per il telefono:** menu in basso, finestre che compaiono dal basso, tabelle che diventano schede.
 - **Testi minimi:** ogni schermata, indicatore e menu ha un tasto **?** con la spiegazione.
-- **Consulente:** analizza ogni attività e propone soluzioni applicabili con un tocco (ottimizza turni, ordina scorte, allinea prezzi, ripara, assumi).
-- **Giornata ora per ora:** clienti serviti e persi per ogni ora, con il motivo (manca un ruolo, nessuno in turno, locale pieno).
-- **Turni:**
-  - griglia interattiva per giorno: tocca una casella per spostare l'inizio del turno;
-  - copertura oraria e clienti attesi;
-  - ottimizzazione automatica di giorni e orari.
-- **Barra laterale delle schede aperte:** si apre dal bordo destro e permette di tornare con un tocco alle ultime attività e sezioni visitate.
+- **Giornata ora per ora:** clienti serviti e persi per ogni ora, con il motivo.
+- **Turni:** griglia interattiva per giorno, con copertura oraria e clienti attesi.
 
 ## Contenuti
 

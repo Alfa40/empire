@@ -4,6 +4,7 @@
    ogni voce: [titolo, [punti...]]
    ============================================================ */
 const HELP = {
+  panoramica: ['Panoramica', ['Tutto in una schermata.', 'Verde = ok, rosso = qualcosa da sistemare, grigio = spento o a riposo.', 'Tocca un riquadro per aprirne la scheda e cambiarlo.', 'Tocca il titolo di una riga per la sezione completa.']],
   // generali
   cassa: ['Cassa', ['Soldi disponibili sul conto.', 'Può andare in negativo fino al fido.', 'Oltre il fido per 30 giorni = fallimento.']],
   patrimonio: ['Patrimonio netto', ['Tutto ciò che possiedi meno i debiti.', 'Include attrezzature, merci, immobili, titoli.', 'È il tuo punteggio principale.']],
