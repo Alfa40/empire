@@ -2,7 +2,17 @@
 
 Gestionale economico a turni in italiano, giocabile nel browser. Si parte con un capitale e una prima attività, e si cresce fino a un impero economico.
 
-## Come avviarlo
+## Gioca
+
+**https://alfa40.github.io/empire/**
+
+Sul telefono puoi installarlo come app:
+- **Android (Chrome):** menu ⋮ → "Installa app" oppure "Aggiungi a schermata Home".
+- **iPhone (Safari):** tasto Condividi → "Aggiungi a schermata Home".
+
+Dopo la prima apertura funziona anche senza connessione.
+
+## Come avviarlo in locale
 
 Apri `index.html` con un browser moderno (Edge, Chrome, Firefox). Non servono installazioni né connessione a Internet.
 
