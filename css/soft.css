@@ -1,0 +1,178 @@
+/* ============================================================
+   EMPIRE - stile morbido "cartoon": tondo, pastello, effetto adesivo
+   (nessuna animazione: solo stati statici)
+   ============================================================ */
+:root {
+  --bg: #fdf3e7; --panel: #fffdf9; --panel2: #fbecd9; --line: #f0dcc2; --line2: #e3c6a2;
+  --text: #3b2c25; --muted: #7b665a; --accent: #c64b27; --accent-bg: #ffe2d4; --accent-ink: #ffffff;
+  --green: #2c8550; --green-bg: #dcf5e4; --red: #c03b33; --red-bg: #ffe0dc; --yellow: #946800; --yellow-bg: #fff1c9;
+  --purple: #7148b8; --purple-bg: #efe4ff; --focus: #c64b27;
+  --shadow-c: #e3c6a2;
+}
+:root[data-theme="dark"] {
+  --bg: #221d30; --panel: #2c2640; --panel2: #372f4f; --line: #463d63; --line2: #5d5182;
+  --text: #f4eeff; --muted: #bcb0da; --accent: #ff9b72; --accent-bg: #4b2f36; --accent-ink: #2a1206;
+  --green: #7fdca0; --green-bg: #213a2d; --red: #ff9a92; --red-bg: #4a2a2e; --yellow: #f1cf6b; --yellow-bg: #3f3522;
+  --purple: #c4a8ff; --purple-bg: #362c52; --focus: #ff9b72;
+  --shadow-c: #17131f;
+}
+.c-blue { --c: #3b82d6; --cb: #e4f0ff; } .c-green { --c: #2f9a5c; --cb: #dff7e8; } .c-orange { --c: #e07a2a; --cb: #ffebd9; }
+.c-teal { --c: #1f9c9a; --cb: #d9f6f4; } .c-purple { --c: #8457d4; --cb: #f0e6ff; } .c-yellow { --c: #c49200; --cb: #fff4cc; }
+.c-red { --c: #e0544b; --cb: #ffe4e1; } .c-brown { --c: #a8693f; --cb: #f8e8db; } .c-gray { --c: #8a7f78; --cb: #f2ece6; }
+:root[data-theme="dark"] .c-blue { --c: #7fb6ff; --cb: #253553; } :root[data-theme="dark"] .c-green { --c: #7fdca0; --cb: #223d30; }
+:root[data-theme="dark"] .c-orange { --c: #ffad6b; --cb: #44301f; } :root[data-theme="dark"] .c-teal { --c: #6fe0dc; --cb: #1d3d3f; }
+:root[data-theme="dark"] .c-purple { --c: #c4a8ff; --cb: #372c55; } :root[data-theme="dark"] .c-yellow { --c: #f1cf6b; --cb: #413823; }
+:root[data-theme="dark"] .c-red { --c: #ff9a92; --cb: #4a2a2e; } :root[data-theme="dark"] .c-brown { --c: #e3ae8a; --cb: #40302a; }
+:root[data-theme="dark"] .c-gray { --c: #c8bfd8; --cb: #352f45; }
+
+body { font-family: "Nunito", ui-rounded, "SF Pro Rounded", "Segoe UI Rounded", "Arial Rounded MT Bold", system-ui, sans-serif; font-weight: 600; }
+h1, h2, h3, h4, b, strong { font-weight: 800; }
+h1 { font-weight: 900; }
+
+/* pannelli e sezioni */
+.panel { border: 2px solid var(--line2); border-radius: 22px; box-shadow: 0 5px 0 var(--shadow-c); }
+.panel.col { border: 2px solid color-mix(in srgb, var(--c) 45%, var(--line)); box-shadow: 0 5px 0 color-mix(in srgb, var(--c) 35%, transparent); }
+.panel.col.open .ph { background: var(--cb); border-bottom: 2px dashed color-mix(in srgb, var(--c) 35%, transparent); }
+.ph-t { padding: .8rem .9rem; }
+.ph-t h3 { font-weight: 900; }
+.ph-t .cdot { width: .9rem; height: .9rem; box-shadow: inset 0 -2px 0 rgba(0,0,0,.15); }
+.ph-t .chev { font-size: 1rem; }
+
+/* pulsanti "adesivo" */
+.btn { border: 2px solid var(--line2); border-radius: 14px; background: var(--panel); font-weight: 800; box-shadow: 0 3px 0 var(--shadow-c); }
+.btn:hover { border-color: var(--accent); }
+.btn:active:not(:disabled) { transform: translateY(3px); box-shadow: none; }
+.btn.pri { background: var(--accent); border-color: color-mix(in srgb, var(--accent) 75%, #000); color: var(--accent-ink); box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.btn.ok { box-shadow: 0 3px 0 color-mix(in srgb, var(--green) 60%, #000); border-color: color-mix(in srgb, var(--green) 75%, #000); }
+.btn.danger { box-shadow: 0 3px 0 color-mix(in srgb, var(--red) 40%, transparent); }
+.btn.ghost { box-shadow: none; border-color: transparent; background: transparent; }
+.btn.sm { border-radius: 12px; }
+.btn.on { background: var(--accent-bg); border-color: var(--accent); }
+.btn.play { border-radius: 50%; width: 3rem; min-width: 3rem; height: 3rem; padding: 0; font-size: 1.2rem; }
+.btn:disabled { box-shadow: none; }
+
+/* indicatori, pillole, riquadri */
+.kpi { border: 2px solid var(--line2); border-radius: 18px; box-shadow: 0 4px 0 var(--shadow-c); }
+.kpi.tap:active { transform: translateY(3px); box-shadow: none; }
+.kpi.tap::after { content: "?"; font: 900 .7rem/1 "Nunito", system-ui, sans-serif; top: .35rem; right: .5rem; width: 1rem; height: 1rem; border-radius: 50%; background: var(--panel2); display: flex; align-items: center; justify-content: center; opacity: .8; }
+.hero .kpi { border-radius: 22px; background: linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%); }
+.hero .kpi b { font-size: 1.5rem; font-weight: 900; }
+.pill { border: 2px solid color-mix(in srgb, var(--c) 45%, transparent); border-radius: 16px; box-shadow: 0 3px 0 color-mix(in srgb, var(--c) 30%, transparent); }
+.pill:active { transform: translateY(3px); box-shadow: none; }
+.tile { border: 2px solid color-mix(in srgb, var(--c) 55%, transparent); border-radius: 20px; box-shadow: 0 5px 0 color-mix(in srgb, var(--c) 40%, transparent); }
+.tile:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 color-mix(in srgb, var(--c) 40%, transparent); }
+.tile .ic { font-size: 1.85rem; line-height: 1.1; margin-bottom: .15rem; }
+.tile b { font-weight: 900; }
+.tile .flag { min-width: 1.45rem; height: 1.45rem; border: 2px solid var(--panel); font-weight: 900; }
+.card { border: 2px solid var(--line2); border-radius: 18px; box-shadow: 0 4px 0 var(--shadow-c); }
+.card.on { box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 50%, transparent), inset 0 0 0 1px var(--accent); }
+.card:active:not(:disabled) { transform: translateY(3px); box-shadow: none; }
+.card .cico { font-size: 1.8rem; line-height: 1.1; }
+.badge { border: 2px solid var(--line2); border-radius: 999px; font-weight: 800; padding: .05rem .55rem; }
+.chip { border-radius: 999px; border-width: 2px; font-weight: 800; }
+.bar { height: 10px; width: 60px; border-radius: 6px; border: 2px solid var(--line); }
+.bar > i { border-radius: 4px; }
+.meter { height: 18px; border-radius: 9px; border: 2px solid var(--line); }
+.hq { width: 1.45rem; height: 1.45rem; border: 2px solid var(--line2); background: var(--panel); font-size: .78rem; font-weight: 900; box-shadow: 0 2px 0 var(--shadow-c); }
+
+/* campi */
+input, select { border: 2px solid var(--line2); border-radius: 12px; font-weight: 700; }
+.days button { border: 2px solid var(--line2); border-radius: 10px; font-weight: 900; }
+.days button.on { box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+
+/* barra superiore e navigazione */
+.top { border-bottom: 0; box-shadow: 0 3px 0 var(--line); }
+.top .when b, .top .money b { font-weight: 900; }
+nav.side button { border-radius: 14px; font-weight: 700; }
+nav.side button .ic { font-size: 1.15rem; width: 1.6rem; }
+nav.side button.on { background: var(--accent-bg); border: 2px solid var(--accent); box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 35%, transparent); }
+.menu-grid button { border: 2px solid var(--line2); border-radius: 20px; box-shadow: 0 4px 0 var(--shadow-c); font-weight: 800; }
+.menu-grid button .ic { font-size: 1.8rem; }
+.menu-grid button:active:not(:disabled) { transform: translateY(3px); box-shadow: none; }
+
+/* consulente */
+.adv-list li { border-bottom: 2px dashed var(--line); }
+.adv-list .dot { width: auto; height: auto; background: none !important; font-size: 1.15rem; }
+.adv-ok { font-weight: 900; }
+
+/* finestre */
+.modal { border: 2px solid var(--line2); border-radius: 26px; box-shadow: 0 6px 0 var(--shadow-c); }
+.modal .mh { background: var(--panel2); border-radius: 24px 24px 0 0; border-bottom: 2px dashed var(--line2); }
+.modal .mh h2 { font-weight: 900; }
+.tut { border: 3px solid var(--yellow); border-radius: 22px; box-shadow: 0 6px 0 color-mix(in srgb, var(--yellow) 45%, transparent); }
+#toast div { border: 2px solid var(--line2); border-left-width: 6px; border-radius: 14px; font-weight: 700; }
+
+/* testata attività */
+.bizhead .bico { font-size: 1.6rem; line-height: 1; }
+.bizhead .sdot { width: .8rem; height: .8rem; }
+
+/* griglia turni */
+.shift-wrap { border: 2px solid var(--line2); border-radius: 18px; }
+table.shifts td.cell button { border-radius: 6px; }
+table.shifts td.cell.on button { background: var(--accent); box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); }
+
+/* tabelle */
+th { background: var(--panel2); font-weight: 900; }
+.tw { border-radius: 14px; }
+.list-log li { border-bottom: 2px dashed var(--line); }
+.cal .c { border: 2px solid var(--line); border-radius: 12px; }
+
+@media (max-width: 760px) {
+  nav.bottom { border-top: 0; border-radius: 22px 22px 0 0; box-shadow: 0 -3px 0 var(--line); height: calc(var(--nav-h) + 4px); }
+  nav.bottom button { font-weight: 800; }
+  nav.bottom button .ic { font-size: 1.4rem; padding: .15rem .55rem; border-radius: 14px; }
+  nav.bottom button.on .ic { background: var(--accent-bg); }
+  nav.bottom button.on { color: var(--accent); }
+  table.rt tr { border: 2px solid var(--line2); border-radius: 16px; box-shadow: 0 3px 0 var(--shadow-c); }
+  .modal, .modal.wide { border-radius: 26px 26px 0 0; }
+  .tile .ic { font-size: 1.7rem; }
+}
+@media (max-width: 760px) {
+  .panel.col .ph:not(.wrap) { flex-wrap: nowrap; padding-right: .55rem; }
+  .panel.col .ph:not(.wrap) .ph-t { flex: 1 1 auto; }
+  .panel.col .ph:not(.wrap) .ph-a { width: auto; padding: 0; }
+}
+
+/* ---------- semaforo dei riquadri: verde ok, rosso problema ---------- */
+.tile.st-ok, .tile.st-bad, .tile.st-new { background: var(--panel); }
+.tile.st-ok { border: 3px solid var(--green); box-shadow: 0 5px 0 color-mix(in srgb, var(--green) 45%, transparent); }
+.tile.st-bad { border: 3px solid var(--red); background: var(--red-bg); box-shadow: 0 5px 0 color-mix(in srgb, var(--red) 50%, transparent); }
+.tile.st-new { border: 3px dashed var(--line2); box-shadow: none; }
+.tile.st-ok:active:not(:disabled) { box-shadow: 0 1px 0 color-mix(in srgb, var(--green) 45%, transparent); }
+.tile.st-bad:active:not(:disabled) { box-shadow: 0 1px 0 color-mix(in srgb, var(--red) 50%, transparent); }
+.tile.big { min-height: 6rem; }
+.tile.big .ic { font-size: 2.1rem; }
+.tile .m { font-weight: 700; }
+.summary { margin: -.3rem 0 .8rem; color: var(--muted); font-weight: 700; font-size: .92rem; }
+.probs { background: var(--red-bg); border: 3px solid var(--red); border-radius: 18px; padding: .2rem .7rem; margin-bottom: .8rem; box-shadow: 0 4px 0 color-mix(in srgb, var(--red) 40%, transparent); }
+.probs .adv-list li:last-child { border-bottom: 0; }
+@media (max-width: 760px) {
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+  .tile { min-height: 5rem; padding: .65rem .7rem; }
+  .tile .ic { font-size: 1.9rem; }
+  .tile b { font-size: .95rem; }
+}
+
+/* ---------- dentro le sezioni: ciò che non va è rosso, ciò che va bene è verde ---------- */
+tr.bad td { background: var(--red-bg); }
+tr.bad td:first-child { box-shadow: inset 4px 0 0 var(--red); }
+.card.bad { border: 3px solid var(--red); background: var(--red-bg); box-shadow: 0 4px 0 color-mix(in srgb, var(--red) 45%, transparent); }
+.card.good { border: 3px solid var(--green); box-shadow: 0 4px 0 color-mix(in srgb, var(--green) 40%, transparent); }
+.btn.bad { border: 2px solid var(--red); color: var(--red); background: var(--red-bg); box-shadow: 0 3px 0 color-mix(in srgb, var(--red) 45%, transparent); }
+.btn.good { border-color: var(--green); }
+.btn.on.bad { background: var(--red-bg); outline: 2px solid var(--red); outline-offset: 1px; }
+table.shifts td.nm.bad { background: var(--red-bg); }
+table.shifts td.nm.bad b { color: var(--red); }
+.top .money.st-bad { outline: 3px solid var(--red); background: var(--red-bg); }
+@media (max-width: 760px) {
+  table.rt tr.bad { border: 3px solid var(--red); background: var(--red-bg); box-shadow: 0 3px 0 color-mix(in srgb, var(--red) 45%, transparent); }
+  table.rt tr.bad td { background: transparent; box-shadow: none; }
+}
+@media (max-width: 760px) {
+  .top { gap: .35rem; }
+  .top .money { gap: .55rem; overflow: hidden; }
+  .top .money b { font-size: .9rem; }
+  .top .when b { font-size: .9rem; }
+  .btn.play { width: 2.7rem; min-width: 2.7rem; height: 2.7rem; }
+  .top .adv .btn.big:not(.play) { min-height: 2.7rem; padding: .3rem .6rem; }
+}
