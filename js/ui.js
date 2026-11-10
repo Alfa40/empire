@@ -113,12 +113,12 @@ function render() {
     if (id === 'bizlist') cnt = `<span class="cnt">${S.biz.length}</span>`;
     if (id === 'staff') cnt = `<span class="cnt">${Object.keys(S.emps).length}</span>`;
     return `<button data-a="nav" data-v="${id}" class="${cur === id ? 'on' : ''} ${tut && tut.hl === id ? 'hl' : ''}"${navAllowed(id, tut) ? '' : ' disabled'}><span class="ic">${ic}</span><span class="lb">${label}</span>${cnt}</button>`;
-  }).join('');
+  }).join('') + recentSide(tut);
   const mob = MOBILE_NAV.map(id => { const n = NAV.find(x => x && x[0] === id); return `<button data-a="nav" data-v="${id}" class="${cur === id ? 'on' : ''} ${tut && tut.hl === id ? 'hl' : ''}"${navAllowed(id, tut) ? '' : ' disabled'}><span class="ic">${n[1]}</span><span>${n[2]}</span></button>`; }).join('')
     + `<button data-a="menu" class="${MOBILE_NAV.includes(cur) ? '' : 'on'} ${tut && tut.hl && !MOBILE_NAV.includes(tut.hl) && tut.hl !== 'adv' ? 'hl' : ''}"><span class="ic">🧩</span><span>Menu</span></button>`;
   const view = (VIEWS[UI.view] || VIEWS.dash)();
   trackRecent();
-  app.innerHTML = `${topBar(tut)}<div class="layout"><nav class="side">${navHtml}</nav><main>${view}</main></div>${railHtml(tut)}<nav class="bottom">${mob}</nav>${tut ? tutorialBox(tut) : ''}`;
+  app.innerHTML = `${topBar(tut)}<div class="layout"><nav class="side">${navHtml}</nav><main>${view}</main></div><nav class="bottom">${mob}</nav>${tut ? tutorialBox(tut) : ''}`;
   renderModal();
 }
 
@@ -212,7 +212,7 @@ MODALS.money = () => {
 ACT.menu = () => openModal('menu');
 MODALS.menu = () => {
   const tut = tutorialState();
-  return sheet('Menu', `<div class="menu-grid">${NAV.filter(Boolean).map(([id, ic, l]) => `<button data-a="nav" data-v="${id}"${navAllowed(id, tut) ? '' : ' disabled'} class="${UI.view === id ? 'on' : ''} ${tut && tut.hl === id ? 'hl' : ''}"><span class="ic">${ic}</span>${l}</button>`).join('')}</div>`);
+  return sheet('Menu', `${tut ? '' : recentRow()}<div class="menu-grid">${NAV.filter(Boolean).map(([id, ic, l]) => `<button data-a="nav" data-v="${id}"${navAllowed(id, tut) ? '' : ' disabled'} class="${UI.view === id ? 'on' : ''} ${tut && tut.hl === id ? 'hl' : ''}"><span class="ic">${ic}</span>${l}</button>`).join('')}</div>`);
 };
 // avanzamento
 ACT.advMenu = () => openModal('adv');
@@ -260,13 +260,25 @@ function trackRecent() {
   const R = S.recent || (S.recent = []);
   const k = curKey();
   let label, ic;
-  if (UI.view === 'biz') { const b = getBiz(UI.biz); if (!b) return; label = b.name; ic = bizType(b).name[0]; }
+  if (UI.view === 'biz') { const b = getBiz(UI.biz); if (!b) return; label = b.name; ic = bizType(b).icon; }
   else { const n = NAV.find(x => x && x[0] === UI.view); if (!n) return; label = n[2]; ic = n[1]; }
   const i = R.findIndex(x => x.k === k);
   const item = { k, v: UI.view, id: UI.biz, tab: UI.tab, label, ic };
   if (i >= 0) R[i] = item; else { R.unshift(item); if (R.length > 7) R.pop(); }
   // rimuove schede di attività che non esistono più
   S.recent = R.filter(x => x.v !== 'biz' || getBiz(x.id));
+}
+/** schede recenti: elenco nel menu laterale (computer) */
+function recentSide(tut) {
+  const R = (S.recent || []).filter(x => x.k !== curKey());
+  if (tut || !R.length) return '';
+  return `<div class="sep"></div><div class="side-h">Recenti</div>${R.slice(0, 5).map(x => `<button data-a="recentGo" data-k="${esc(x.k)}"><span class="ic">${x.ic}</span><span class="lb">${esc(x.label)}</span></button>`).join('')}`;
+}
+/** schede recenti: riga di pulsanti in cima al Menu (telefono) */
+function recentRow() {
+  const R = (S.recent || []).filter(x => x.k !== curKey());
+  if (!R.length) return '';
+  return `<h4>Recenti</h4><div class="recent-row">${R.slice(0, 6).map(x => `<button class="pill c-gray" data-a="recentGo" data-k="${esc(x.k)}"><b>${x.ic} ${esc(x.label)}</b></button>`).join('')}</div><h4>Sezioni</h4>`;
 }
 function railHtml(tut) {
   const R = (S.recent || []);

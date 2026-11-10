@@ -1,0 +1,39 @@
+/* ============================================================
+   EMPIRE - correzioni di impaginazione: nessun tasto sovrapposto
+   ============================================================ */
+/* elenco "Recenti" */
+nav.side .side-h { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 800; padding: .2rem .7rem; }
+.recent-row { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .6rem; }
+.recent-row .pill { max-width: 100%; }
+.recent-row .pill b { font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 14rem; display: block; }
+
+/* stepper: il valore non invade mai i tasti − e + */
+.stepper { flex-wrap: nowrap; gap: .35rem; }
+.stepper b { min-width: 3.6rem; white-space: nowrap; text-align: center; flex: none; }
+.stepper .btn { flex: none; min-width: 2.1rem; }
+
+/* fila dei giorni: non si restringe mai sotto la sua misura */
+.days { flex-wrap: nowrap; flex: none; }
+.days button { flex: none; }
+
+/* gruppi di pulsanti: vanno a capo invece di sovrapporsi */
+.row, .seg { flex-wrap: wrap; }
+.btn { max-width: 100%; }
+.seg .btn { white-space: nowrap; }
+
+@media (max-width: 760px) {
+  /* nelle schede-tabella i giorni, i gruppi di tasti e i campi prendono tutta la riga */
+  table.rt td:has(.days), table.rt td:has(.stepper), table.rt td:has(.row), table.rt td:has(select) { grid-column: 1 / -1; }
+  table.rt td .v { max-width: 100%; }
+  table.rt td:has(.stepper) .v { width: 100%; }
+  /* barra in alto: data su due righe, così i numeri non vengono tagliati */
+  .top .when b .wx { display: block; margin: 0; font-size: .75rem; }
+  .top .when .chip { display: none; }
+  .top .money span { flex: none; }
+}
+@media (max-width: 380px) {
+  .top .money { gap: .45rem; }
+  .top .money b { font-size: .84rem; }
+  .top .money small { font-size: .6rem; }
+  .days button { width: 1.75rem; height: 1.75rem; }
+}
