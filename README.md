@@ -24,6 +24,8 @@ I salvataggi restano nel browser (5 slot e salvataggio automatico). Per fare un 
   - Ogni attività ha 5 riquadri: Turni, Persone, Prezzi (o Produzione), Scorte, Macchine.
   - Verde = tutto ok, rosso = qualcosa da sistemare.
   - Tocca un riquadro per vedere i suoi elementi. Tocca un elemento (persona, prodotto, materiale, macchina, giorno) per aprirne la scheda e cambiarlo.
+- **Personale raggruppato per tipo di lavoro** (Gestione, Clienti e sala, Cucina e laboratorio, Servizi e tecnici, Produzione e magazzino, Sede): ogni gruppo si apre con le persone divise per ruolo.
+- **Finanza a categorie:** entrate e spese raggruppate (spese per dipendenti, affitti, spese fisse, merci, spese gestionali, manutenzione, tasse, banca, investimenti), per mese, mese scorso o anno. Ogni categoria si apre con le voci e quanto pesa ogni attività.
 - **Pensata per il telefono:** menu in basso, finestre che compaiono dal basso, tabelle che diventano schede.
 - **Testi minimi:** ogni schermata, indicatore e menu ha un tasto **?** con la spiegazione.
 - **Giornata ora per ora:** clienti serviti e persi per ogni ora, con il motivo.

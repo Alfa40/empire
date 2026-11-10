@@ -38,7 +38,7 @@ const HELP = {
   contratto: ['Contratti', ['Indeterminato: stabile, licenziare costa un mese.', 'Determinato/stagionale: scade, poi rinnovi o lasci.', 'Apprendistato (under 30): impara in fretta, dopo 3 anni indeterminato.']],
   stipendio: ['Stipendio', ['Lordo mensile a tempo pieno (40 h).', 'Costo per te: +30% contributi +7% TFR.', 'Oltre 40 h: straordinari +25%. Festivi +30%.', '"Mercato" = quanto prenderebbe altrove.']],
   formazione: ['Formazione', ['Aumenta la competenza.', 'Durante il corso il dipendente non lavora.']],
-  ruoli: ['Ruoli', ['Ogni prodotto richiede un ruolo (es. caffè → barista).', 'Cameriere, commesso, receptionist servono i clienti.', 'Responsabile: +6% produttività, +morale, gestisce gli imprevisti.', 'Pulizie: soddisfazione e ispezioni.']],
+  ruoli: ['Ruoli', ['Il personale è diviso per tipo di lavoro: tocca un gruppo per vedere le persone, divise per ruolo.', 'Ogni prodotto richiede un ruolo (es. caffè → barista).', 'Cameriere, commesso, receptionist servono i clienti.', 'Responsabile: +6% produttività, +morale, gestisce gli imprevisti.', 'Pulizie: soddisfazione e ispezioni.']],
   candidati: ['Candidati', ['Cambiano ogni lunedì.', 'Annuncio: 4 nuovi candidati del ruolo scelto.', 'Se offri meno della richiesta, può rifiutare.']],
   sede: ['Sede centrale', ['Contabile: -75% commercialista, meno sanzioni.', 'HR: candidati migliori, +morale.', 'Marketing: campagne +30%.', 'Area manager: gestisce 6 attività da solo.', 'Ricercatore: ricerca più veloce.']],
   auto: ['Gestione automatica', ['Con un Responsabile o un Area manager gli imprevisti minori vengono decisi da soli.']],
@@ -69,12 +69,12 @@ const HELP = {
   ingrosso: ['Ingrosso', ['Vendi sul mercato nazionale.', 'Prezzo più alto = meno domanda.', 'Weekend e festivi: quasi zero.', 'Scorta riservata: resta per le tue attività.']],
   filiera: ['Filiera', ['Le tue attività possono comprare da qui come fornitore interno.', 'Prezzo = costo di produzione +5%, senza IVA.']],
   // finanza
-  ce: ['Conto economico', ['Ricavi e costi mese per mese, senza IVA.', 'Attrezzature e lavori sono ammortizzati negli anni.', 'Le imposte si registrano a fine anno.']],
+  ce: ['Entrate e spese', ['Ricavi e costi del periodo, divisi in gruppi (dipendenti, affitti, spese fisse…).', 'Tocca un gruppo per vedere le voci e quanto pesa ogni attività.', 'Senza IVA. Attrezzature e lavori sono ammortizzati negli anni.']],
   sp: ['Stato patrimoniale', ['Cosa possiedi (attività) e cosa devi (passività).', 'La differenza è il patrimonio netto.']],
   iva: ['IVA', ['Incassi l\'IVA sulle vendite, paghi quella sugli acquisti.', 'Il 16 versi la differenza del mese prima.', 'Nel forfettario non c\'è IVA.']],
   imposte: ['Imposte', ['Calcolate sull\'utile dell\'anno al 31 dicembre.', 'Si pagano entro il 30 giugno successivo.', 'Le perdite si riportano agli anni dopo.']],
   forma: ['Forma giuridica', ['Forfettario: 15% (5% primi 5 anni) su parte dei ricavi, max 85.000 €.', 'Ditta: IRPEF a scaglioni + INPS.', 'S.r.l.: 24% + 3,9% sugli utili.', 'S.p.A.: necessaria per la Borsa.']],
-  flussi: ['Flussi di cassa', ['Tutti i movimenti, compresi prestiti, investimenti e tasse versate.']],
+  flussi: ['Cassa', ['Tutti i soldi entrati e usciti, compresi prestiti, investimenti, IVA e tasse versate.', 'Tocca un gruppo per il dettaglio.']],
   // banca
   prestito: ['Prestito', ['Rate mensili costanti.', 'Importo massimo: ricavi, patrimonio, rating.', 'Estinzione anticipata: +1%.']],
   fido: ['Fido', ['Puoi andare in negativo fino al limite.', 'Interessi solo sulla parte usata + 0,5% annuo.', 'Oltre il limite: 16% e rischio fallimento.']],
