@@ -104,3 +104,9 @@ button.kvl:hover { background: var(--panel2); }
 .fc { margin-top: .7rem; padding: .6rem .8rem; border-radius: 14px; border: 2px solid var(--green); background: var(--green-bg); display: grid; gap: .3rem; }
 .fc.bad { border-color: var(--red); background: var(--red-bg); }
 .fc .kvl { border-bottom-color: color-mix(in srgb, var(--red) 30%, transparent); }
+
+/* titoli di ruolo negli elenchi di persone */
+h4.rh { margin: .8rem 0 .35rem; }
+.ovcs > h4.rh { flex-basis: 100%; margin: .5rem 0 0; }
+.ovcs > h4.rh:first-child { margin-top: 0; }
+h3.sh { margin: 1rem 0 .2rem; font-size: 1rem; }

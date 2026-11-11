@@ -31,10 +31,34 @@ function staffGroups() {
   if (other.length) out.push({ id: 'altro', ic: '🧩', n: 'Altro', roles: [...new Set(other.map(e => e.role))], emps: other });
   return out;
 }
+// ---------- persone sempre divise per lavoro ----------
+/** ordine dei ruoli: quello dei gruppi di lavoro, poi gli altri */
+function roleRank(r) { const all = JOB_GROUPS.flatMap(g => g.roles); const i = all.indexOf(r); return i < 0 ? 99 : i; }
+function roleIdByName(n) { return Object.keys(ROLES).find(k => ROLES[k].name === n) || null; }
+/** [{r, items}] in ordine di ruolo */
+function byRole(items, roleOf) {
+  const m = new Map();
+  for (const x of items) { const r = roleOf(x) || ''; if (!m.has(r)) m.set(r, []); m.get(r).push(x); }
+  return [...m.entries()].sort((a, c) => roleRank(a[0]) - roleRank(c[0]) || String(a[0]).localeCompare(String(c[0]))).map(([r, items]) => ({ r, items }));
+}
+function roleName(r) { return ROLES[r] ? ROLES[r].name : r || 'Altro'; }
+/** elenco diviso per ruolo: titolo "Barista 3" + contenuto */
+function roleSections(items, roleOf, draw, wrap) {
+  return byRole(items, roleOf).map(g => `<h4 class="rh">${esc(roleName(g.r))} <small class="muted">${g.items.length}</small></h4>${(wrap || (s => s))(g.items.map(draw).join(''))}`).join('');
+}
+/** "Mario Rossi · Barista (13ª)" -> { name, role, extra } */
+function splitEmpLabel(w) {
+  const m = /^(.*) · ([^·(]+?)(?: \((.*)\))?$/.exec(w || '');
+  if (!m) return null;
+  const role = roleIdByName(m[2].trim());
+  return role ? { name: m[1], role, extra: m[3] || '' } : null;
+}
+/** perché una persona è in rosso */
+function empWhy(e) { return e.fatigue > 70 ? 'stanco ' + Math.round(e.fatigue) + '%' : e.morale < 40 ? 'morale ' + Math.round(e.morale) : 'contratto in scadenza'; }
 function empChip(e) {
   const b = e.biz === 'hq' ? null : getBiz(e.biz);
   const st = empStatus(e), away = st !== 'Attivo';
-  return ovChip(`${esc(e.first)} <small>${b ? esc(b.name) : 'Sede'}</small>`, away ? st.toLowerCase() : `${Math.round(e.skill)} · ${eur0(e.wage)}`, empBad(e) ? 'bad' : away ? 'off' : 'ok', 'sub', { x: 'empSheet', e: e.id });
+  return ovChip(`${esc(e.first)} <small>${b ? esc(b.name) : 'Sede'}</small>`, away ? st.toLowerCase() : empBad(e) ? empWhy(e) : `${Math.round(e.skill)} · ${eur0(e.wage)}`, empBad(e) ? 'bad' : away ? 'off' : 'ok', 'sub', { x: 'empSheet', e: e.id });
 }
 VIEWS.staff = () => {
   const all = staffList();
@@ -147,9 +171,9 @@ MODALS.finGroup = (M) => {
   let pers = '';
   if (g.id === 'personale') {
     const pp = {};
-    for (const c of ['stipendi', 'contributi']) for (const r of finDetail(keys, c, bizId)) { const n = r.w.replace(/ \(.*\)$/, ''); if (n) pp[n] = (pp[n] || 0) + r.v; }
-    const L = Object.entries(pp).sort((a, c) => a[1] - c[1]);
-    if (L.length) pers = `<h4>Per persona <small class="muted">stipendio + contributi</small></h4>${L.map(([n, v]) => `<div class="kvl"><span>${esc(n)}</span><b class="${cls(v)}">${eur0(v)}</b></div>`).join('')}`;
+    for (const c of ['stipendi', 'contributi']) for (const r of finDetail(keys, c, bizId)) { const p = splitEmpLabel(r.w); const k = p ? p.name + '|' + p.role : r.w + '|'; pp[k] = (pp[k] || 0) + r.v; }
+    const L = Object.entries(pp).map(([k, v]) => { const [n, role] = k.split('|'); return { n, role, v }; }).sort((a, c) => a.v - c.v);
+    if (L.length) pers = `<h3 class="sh">Per persona <small class="muted">stipendio + contributi</small></h3>` + roleSections(L, x => x.role, x => `<div class="kvl"><span>${esc(x.n)}</span><b class="${cls(x.v)}">${eur0(x.v)}</b></div>`);
   }
   // divisione per attività
   let per = '';
@@ -189,7 +213,11 @@ MODALS.finCat = (M) => {
   const max = Math.max(1, ...rows.map(r => Math.abs(r.v)));
   const many = !bizId && S.biz.length > 0;
   const where = r => { if (!many || r.old) return ''; const b = getBiz(r.bz); return '<small class="muted">' + (b ? bizType(b).icon + ' ' + esc(b.name) : r.bz ? 'attività chiusa' : '🏢 Sede') + '</small>'; };
-  const list = rows.map(r => '<div class="kvl"><span class="kvn">' + (r.old ? '<i>Movimenti senza dettaglio</i>' : esc(r.w || 'Varie')) + where(r) + '</span><b class="' + cls(r.v) + '">' + eur2(r.v) + '</b><span class="fbar">' + bar(Math.abs(r.v), max, r.v >= 0 ? 'g' : 'y') + '</span></div>').join('') || '<p class="muted">Nessun movimento.</p>';
+  const line = (r, label) => '<div class="kvl"><span class="kvn">' + (r.old ? '<i>Movimenti senza dettaglio</i>' : esc(label != null ? label : r.w || 'Varie')) + where(r) + '</span><b class="' + cls(r.v) + '">' + eur2(r.v) + '</b><span class="fbar">' + bar(Math.abs(r.v), max, r.v >= 0 ? 'g' : 'y') + '</span></div>';
+  const people = ['stipendi', 'contributi', 'tfr_pagato'].includes(M.c) && rows.some(r => splitEmpLabel(r.w));
+  const list = (people
+    ? roleSections(rows.filter(r => !r.old), r => { const p = splitEmpLabel(r.w); return p ? p.role : ''; }, r => { const p = splitEmpLabel(r.w); return line(r, p ? p.name + (p.extra ? ' (' + p.extra + ')' : '') : null); }) + rows.filter(r => r.old).map(r => line(r)).join('')
+    : rows.map(r => line(r)).join('')) || '<p class="muted">Nessun movimento.</p>';
   const per = keys.length === 1 && keys[0] !== String(monthKey(S.day)) ? monthLabel(keys[0]) : (FIN_PERIODS.find(p => p[0] === (UI.fin.per || 'mese')) || FIN_PERIODS[0])[1];
   const n = rows.filter(r => !r.old).length;
   return sheet(esc(C.n), '<small class="muted">' + per + (bizId && getBiz(bizId) ? ' · ' + esc(getBiz(bizId).name) : '') + '</small>'

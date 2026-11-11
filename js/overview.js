@@ -29,13 +29,13 @@ function ovAreas(b) {
   }).join('');
   out.push({ id: 'turni', ic: '🗓️', title: 'Turni', sum: gap ? `${gap} gg da sistemare` : 'ok', bad: gap > 0, chips: days, note: 'Tocca un giorno per i turni' });
   // persone
-  const emps = empsOf(b.id).slice().sort((x, y) => (y.wdays[wdNext] - x.wdays[wdNext]) || startOn(x, wdNext) - startOn(y, wdNext));
+  const emps = empsOf(b.id).slice().sort((x, y) => roleRank(x.role) - roleRank(y.role) || (y.wdays[wdNext] - x.wdays[wdNext]) || startOn(x, wdNext) - startOn(y, wdNext));
   const nBad = emps.filter(empBad).length;
-  const pc = emps.map(e => {
+  const pc = byRole(emps, e => e.role).map(g => `<h4 class="rh">${esc(roleName(g.r))} <small class="muted">${g.items.length}</small></h4>` + g.items.map(e => {
     const st = empStatus(e), away = st !== 'Attivo';
-    const val = away ? st.toLowerCase() : e.wdays[wdNext] ? `${pad2(startOn(e, wdNext))}–${pad2(Math.min(24, startOn(e, wdNext) + e.hours))}` : 'riposo';
-    return ovChip(`${esc(e.first)} <small>${esc(ROLES[e.role].name)}</small>`, val, empBad(e) ? 'bad' : away || !e.wdays[wdNext] ? 'off' : 'ok', 'ov', it('empSheet', { e: e.id }));
-  }).join('') + ovChip('+ Assumi', '', 'add', 'ov', it('hireOpen', { target: b.id }));
+    const val = away ? st.toLowerCase() : empBad(e) ? empWhy(e) : e.wdays[wdNext] ? `${pad2(startOn(e, wdNext))}–${pad2(Math.min(24, startOn(e, wdNext) + e.hours))}` : 'riposo';
+    return ovChip(esc(e.first + ' ' + e.last[0] + '.'), val, empBad(e) ? 'bad' : away || !e.wdays[wdNext] ? 'off' : 'ok', 'ov', it('empSheet', { e: e.id }));
+  }).join('')).join('') + ovChip('+ Assumi', '', 'add', 'ov', it('hireOpen', { target: b.id }));
   out.push({ id: 'personale', ic: '👥', title: 'Persone', sum: !emps.length ? 'nessuno' : nBad ? `${nBad} da vedere` : `${emps.length} ok`, bad: !emps.length || nBad > 0, chips: pc, note: `Orari di domani · ${WEEKDAYS[wdNext]}` });
   // prezzi / produzione
   if (shop) {

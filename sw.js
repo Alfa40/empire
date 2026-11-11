@@ -1,6 +1,6 @@
 /* EMPIRE - service worker: permette di giocare anche offline.
    Strategia: prima la rete (così gli aggiornamenti arrivano subito), poi la copia salvata. */
-const CACHE = 'empire-v6';
+const CACHE = 'empire-v7';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css', 'css/soft.css', 'css/fix.css',
   'js/util.js', 'js/calendar.js', 'js/data.js', 'js/state.js', 'js/finance.js', 'js/business.js', 'js/sim.js',

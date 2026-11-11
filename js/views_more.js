@@ -24,7 +24,7 @@ VIEWS.hq = () => {
   const roles = Object.keys(ROLES).filter(r => ROLES[r].hq);
   return `<div class="head"><h1>Sede centrale ${hb('sede')}</h1>${btn('+ Assumi', 'hireOpen', { target: 'hq' }, 'pri')}</div>
     <div class="kpis">${roles.map(r => kpi(ROLES[r].name, hqCount(r))).join('')}</div>
-    ${sec('Personale di sede', null, table(['Nome', 'Ruolo', 'Competenza', 'Morale', 'Stanchezza', ['Stipendio', 'n'], 'Stato', ''], hqEmps().map(empRow), { empty: '—' }))}
+    ${sec('Personale di sede', null, hqEmps().length ? roleSections(hqEmps(), e => e.role, empChip, s => `<div class="ovcs">${s}</div>`) : '<p class="muted">—</p>')}
     ${sec('Gestione automatica', 'auto', `<label class="row"><input type="checkbox" data-c="autoMinor" ${S.settings.autoMinor ? 'checked' : ''}> Imprevisti minori decisi dai responsabili</label>`, '', { closed: true, sum: S.settings.autoMinor ? 'attiva' : 'spenta' })}`;
 };
 CHG.autoMinor = (v, d, el) => { S.settings.autoMinor = el.checked; commit(); };

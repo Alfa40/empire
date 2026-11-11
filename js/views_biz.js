@@ -116,7 +116,7 @@ BIZ_TABS.giornata = (b, T) => {
 BIZ_TABS.turni = (b, T) => {
   if (UI.tday == null) UI.tday = ymd(S.day + 1).wd;
   const wd = UI.tday;
-  const emps = empsOf(b.id).slice().sort((a, c) => (c.wdays[wd] - a.wdays[wd]) || startOn(a, wd) - startOn(c, wd));
+  const emps = empsOf(b.id).slice().sort((a, c) => roleRank(a.role) - roleRank(c.role) || (c.wdays[wd] - a.wdays[wd]) || startOn(a, wd) - startOn(c, wd));
   const shop = T.mode === 'shop' && T.capMode !== 'day';
   let lo = shop ? b.hours[0] : 6, hi = shop ? b.hours[1] : 20;
   for (const e of emps) if (e.wdays[wd]) { lo = Math.min(lo, startOn(e, wd)); hi = Math.max(hi, startOn(e, wd) + e.hours); }
@@ -161,7 +161,7 @@ ACT.empDay = (d) => { const e = S.emps[d.e]; if (!e) return; e.wdays[+d.i] = e.w
 // ---------- Personale ----------
 BIZ_TABS.personale = (b) => {
   const emps = empsOf(b.id);
-  return sec(`Personale · ${emps.length}`, 'ruoli', table(['Nome', 'Ruolo', 'Competenza', 'Morale', 'Stanchezza', ['Stipendio', 'n'], 'Stato', ''], emps.map(empRow), { empty: 'Nessuno' }),
+  return sec(`Personale · ${emps.length}`, 'ruoli', emps.length ? '<small class="muted">Competenza · stipendio</small>' + roleSections(emps, e => e.role, empChip, s => `<div class="ovcs">${s}</div>`) : '<p class="muted">Nessuno.</p>',
     btn('+ Assumi', 'hireOpen', { target: b.id }, 'sm pri' + (tutorialHl('hire') ? ' hl' : '')));
 };
 function empRow(e) {
@@ -283,9 +283,9 @@ MODALS.hire = () => {
       ${b ? '' : select('hireCity', CITIES.map(x => [x.id, x.name]), H.city)}
       ${select('hireRole', [['', 'Tutti i ruoli'], ...roles.map(r => [r, ROLES[r].name])], H.role)}
       ${btn('📣 Annuncio 183 €', 'hireAd', {}, 'sm', !H.role)}</div>
-    <div class="cards">${list.map(x => `<button class="card" data-a="hireCand" data-c="${x.id}"><h4>${esc(x.first + ' ' + x.last)}</h4>
+    ${list.length ? roleSections(list, x => x.role, x => `<button class="card" data-a="hireCand" data-c="${x.id}"><h4>${esc(x.first + ' ' + x.last)}</h4>
       <div class="kv">${esc(ROLES[x.role].name)} <b>${x.age} anni</b></div><div class="kv">Competenza <b>${skillBadge(x.skill)}</b></div>
-      <div class="kv">Chiede <b>${eur0(x.expected)}</b></div>${x.traits.length ? `<small>${x.traits.map(t => esc(TRAITS[t].n)).join(' · ')}</small>` : ''}</button>`).join('') || '<p class="muted">Nessuno: pubblica un annuncio.</p>'}</div>`,
+      <div class="kv">Chiede <b>${eur0(x.expected)}</b></div>${x.traits.length ? `<small>${x.traits.map(t => esc(TRAITS[t].n)).join(' · ')}</small>` : ''}</button>`, s => `<div class="cards">${s}</div>`) : '<p class="muted">Nessuno: pubblica un annuncio.</p>'}`,
     '', { wide: true, help: isHq ? 'sede' : 'candidati' });
 };
 
