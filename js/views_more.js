@@ -311,6 +311,6 @@ ACT.logF = (d) => { UI.logf = d.f; render(); };
 VIEWS.ach = () => `<div class="head"><h1>Traguardi ${hb('traguardi')}</h1><b>${Object.keys(S.ach).length}/${ACHIEVEMENTS.length}</b></div>
   <div class="cards">${ACHIEVEMENTS.map(a => `<div class="card" style="cursor:default;${S.ach[a.id] ? '' : 'opacity:.55'}"><h4>${S.ach[a.id] ? '★' : '☆'} ${esc(a.n)}</h4><small>${esc(a.d)}</small>${S.ach[a.id] ? `<small class="pos">${fmtDateShort(S.ach[a.id])}</small>` : ''}</div>`).join('')}</div>`;
 VIEWS.settings = () => `<div class="head"><h1>Impostazioni</h1></div>
-  ${sec('Aspetto', null, `<div class="row">${themeButtons()}</div>${topPadPicker()}`, '', { c: 'gray' })}
+  ${sec('Aspetto', null, `<h4>Colori</h4>${palButtons()}<h4>Chiaro o scuro</h4><div class="row">${themeButtons()}</div>${topPadPicker()}`, '', { c: 'gray' })}
   ${sec('Salvataggi', 'salvataggi', savesPanel(true), '', { closed: true, sum: 'slot ' + S.meta.slot })}
   ${sec('Partita', null, `<div class="row">${btn('Menu principale', 'quitMenu')}${btn('Rivedi tutorial', 'tutRestart')}</div>`, '', { closed: true, c: 'gray' })}`;

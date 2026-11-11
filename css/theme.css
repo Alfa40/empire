@@ -1,0 +1,71 @@
+/* ============================================================
+   EMPIRE - temi di colore e sfondo decorato (statico, niente animazioni)
+   data-pal sull'html: pesca (base) | mare | bosco | lavanda | sole
+   --tint cambia con la sezione aperta (data-view sul body)
+   ============================================================ */
+:root { --tint: var(--accent); --dot: color-mix(in srgb, var(--line2) 55%, transparent); }
+
+/* ---------- Mare ---------- */
+:root[data-pal="mare"] { --bg: #e9f4f8; --panel: #fbfeff; --panel2: #dcedf3; --line: #c5dfe8; --line2: #9fc6d4; --shadow-c: #9fc6d4; --text: #1f3540; --muted: #4f6d7a; }
+:root[data-pal="mare"][data-theme="dark"] { --bg: #142530; --panel: #1b3240; --panel2: #22404f; --line: #2f5466; --line2: #427186; --shadow-c: #0b161d; --text: #e6f4fa; --muted: #a3c3d0; }
+/* ---------- Bosco ---------- */
+:root[data-pal="bosco"] { --bg: #eef3e6; --panel: #fdfefa; --panel2: #e2ebd4; --line: #cfdcbb; --line2: #aec392; --shadow-c: #aec392; --text: #2b3522; --muted: #5d6c4f; }
+:root[data-pal="bosco"][data-theme="dark"] { --bg: #18211a; --panel: #213024; --panel2: #2a3c2d; --line: #37503b; --line2: #4c6a50; --shadow-c: #0d130e; --text: #edf5e8; --muted: #b0c4a8; }
+/* ---------- Lavanda ---------- */
+:root[data-pal="lavanda"] { --bg: #f3effb; --panel: #fefcff; --panel2: #e9e2f7; --line: #dcd1f0; --line2: #bfaee3; --shadow-c: #bfaee3; --text: #2f2640; --muted: #665a80; }
+:root[data-pal="lavanda"][data-theme="dark"] { --bg: #1f1a2e; --panel: #2a2340; --panel2: #352d50; --line: #463c66; --line2: #5f5288; --shadow-c: #120f1c; --text: #f3eeff; --muted: #bdb1dc; }
+/* ---------- Sole ---------- */
+:root[data-pal="sole"] { --bg: #fdf6dc; --panel: #fffef7; --panel2: #f8ecc0; --line: #efdfa6; --line2: #dcc47a; --shadow-c: #dcc47a; --text: #3a3020; --muted: #6f6245; }
+:root[data-pal="sole"][data-theme="dark"] { --bg: #241f14; --panel: #2f2919; --panel2: #3a3220; --line: #4d4329; --line2: #6a5c38; --shadow-c: #120f08; --text: #fbf3dc; --muted: #c9b98f; }
+
+/* ---------- tinta per sezione ---------- */
+body[data-view="dash"] { --tint: #f08a5d; }
+body[data-view="biz"], body[data-view="bizlist"] { --tint: #e0a030; }
+body[data-view="staff"], body[data-view="hq"] { --tint: #e07a2a; }
+body[data-view="finance"], body[data-view="bank"] { --tint: #2f9a5c; }
+body[data-view="realestate"], body[data-view="stocks"] { --tint: #3b82d6; }
+body[data-view="market"], body[data-view="marketing"], body[data-view="research"] { --tint: #8457d4; }
+body[data-view="calendar"], body[data-view="log"], body[data-view="ach"], body[data-view="settings"] { --tint: #1f9c9a; }
+
+/* ---------- sfondo: macchie morbide + puntini ---------- */
+body { background: var(--bg); }
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(42rem 26rem at 105% -6%, color-mix(in srgb, var(--tint) 22%, transparent), transparent 70%),
+    radial-gradient(36rem 24rem at -10% 108%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    radial-gradient(24rem 18rem at 30% 45%, color-mix(in srgb, var(--tint) 7%, transparent), transparent 70%),
+    radial-gradient(circle at 1px 1px, var(--dot) 1.2px, transparent 1.6px) 0 0 / 22px 22px,
+    var(--bg);
+}
+:root[data-theme="dark"] body::before {
+  background:
+    radial-gradient(42rem 26rem at 105% -6%, color-mix(in srgb, var(--tint) 20%, transparent), transparent 70%),
+    radial-gradient(36rem 24rem at -10% 108%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--line2) 45%, transparent) 1.2px, transparent 1.6px) 0 0 / 22px 22px,
+    var(--bg);
+}
+.layout, main { background: transparent; }
+
+/* ---------- barra in alto: fascia colorata ---------- */
+.top {
+  background: linear-gradient(100deg, color-mix(in srgb, var(--tint) 22%, var(--panel)) 0%, var(--panel) 55%, color-mix(in srgb, var(--accent) 14%, var(--panel)) 100%);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--tint) 35%, var(--line));
+}
+nav.side { background: color-mix(in srgb, var(--panel) 75%, transparent); }
+nav.bottom { background: color-mix(in srgb, var(--tint) 10%, var(--panel)); border-top: 3px solid color-mix(in srgb, var(--tint) 40%, var(--line)); }
+
+/* ---------- pannelli e titoli ---------- */
+.panel { background: linear-gradient(180deg, var(--panel) 0%, color-mix(in srgb, var(--panel) 88%, var(--panel2)) 100%); }
+.ov-head h1, .head h1, .bizhead h1 { position: relative; }
+.ov-head h1::after, .head h1::after {
+  content: ""; display: block; height: 5px; width: 2.6rem; margin-top: .15rem; border-radius: 3px;
+  background: linear-gradient(90deg, var(--tint), color-mix(in srgb, var(--tint) 30%, transparent));
+}
+.modal { background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 7%, var(--panel)) 0%, var(--panel) 9rem); }
+
+/* ---------- scelta del tema ---------- */
+.pals { display: flex; flex-wrap: wrap; gap: .45rem; }
+.pal { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .65rem .3rem .35rem; border-radius: 999px; border: 2px solid var(--line2); background: var(--panel); color: var(--text); font: inherit; font-weight: 800; cursor: pointer; }
+.pal i { width: 1.4rem; height: 1.4rem; border-radius: 50%; border: 2px solid rgba(0,0,0,.12); }
+.pal.on { border-color: var(--sel); background: var(--sel-bg); }

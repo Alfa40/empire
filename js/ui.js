@@ -154,6 +154,8 @@ function applyTheme() {
   let theme = m.theme;
   if (theme === 'auto') theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.pal = m.pal || 'pesca';
+  if (document.body) document.body.dataset.view = S ? UI.view : 'dash';
   document.documentElement.style.fontSize = (m.font || 16) + 'px';
   document.documentElement.style.setProperty('--top-extra', (m.topPad || 0) + 'px');
 }

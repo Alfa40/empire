@@ -16,13 +16,16 @@ function viewStart() {
         ${btn('+ Nuova partita', 'startMode', { m: 'new' }, last ? 'big' : 'pri big')}</div></div>
       ${sec('Partite salvate', 'salvataggi', savesPanel(false))}`;
   }
-  return `<div class="start"><div class="title"><h1>EMPIRE</h1><p class="muted">Costruisci il tuo impero, un giorno alla volta.</p></div>${body}<div class="row" style="justify-content:center">${themeButtons()}</div><div class="row" style="justify-content:center">${topPadPicker()}</div></div>`;
+  return `<div class="start"><div class="title"><h1>EMPIRE</h1><p class="muted">Costruisci il tuo impero, un giorno alla volta.</p></div>${body}<div class="row" style="justify-content:center">${themeButtons()}</div><div class="row" style="justify-content:center">${palButtons()}</div><div class="row" style="justify-content:center">${topPadPicker()}</div></div>`;
 }
 function topPadPicker() {
   const v = getMeta().topPad || 0;
   return `<div class="row mt"><small class="muted">Spazio in alto</small><span class="seg">${[0, 16, 28, 40, 52].map(x => btn(x ? '+' + x : 'Auto', 'setTopPad', { v: x }, 'sm ' + (v === x ? 'on' : ''))).join('')}</span></div>`;
 }
 ACT.setTopPad = (d) => { setMeta({ topPad: +d.v }); render(); };
+const PALETTES = [['pesca', 'Pesca', '#f4a582'], ['mare', 'Mare', '#7cc4d8'], ['bosco', 'Bosco', '#9cc27a'], ['lavanda', 'Lavanda', '#b9a3e6'], ['sole', 'Sole', '#f0cd5a']];
+function palButtons() { const p = getMeta().pal || 'pesca'; return `<div class="pals">${PALETTES.map(([k, l, c]) => `<button class="pal ${p === k ? 'on' : ''}" data-a="setPal" data-p="${k}"><i style="background:${c}"></i>${l}</button>`).join('')}</div>`; }
+ACT.setPal = (d) => { setMeta({ pal: d.p }); render(); };
 function themeButtons() {
   const m = getMeta();
   return `<span class="seg">${[['auto', 'Auto'], ['light', 'Chiaro'], ['dark', 'Scuro']].map(([k, l]) => btn(l, 'setTheme', { t: k }, 'sm ' + (m.theme === k ? 'on' : ''))).join('')}</span>
