@@ -398,6 +398,7 @@ function employeeDay(e, info, worked) {
   if (hasResearch('welfare')) target += 5;
   for (const c of colleagues) if (c.id !== e.id && c.traits.includes('leader')) { target += 3; break; }
   if (b) target += (b.sat - 60) * 0.08;
+  target += peopleMoraleAdj(e, b);
   if (e.contract === 'determinato' || e.contract === 'stagionale') target -= 3;
   const swing = traits.reduce((m, t) => m * (t.moodSwing || 1), 1);
   e.morale = clamp(e.morale + (target - e.morale) * 0.04 + gauss(0, 0.8 * swing), 0, 100);
@@ -409,6 +410,7 @@ function employeeDay(e, info, worked) {
     e.sickUntil = S.day + days;
     if (b) log(`${empName(e)} (${b.name}) è in malattia per ${days} giorni.`, 'bad', e.biz);
   }
+  peopleDay(e);
 }
 
 // ===================== Giorno =====================
@@ -690,6 +692,7 @@ function monthStart(info) {
     expense(fee, 0.22, 'consulenze', null, 'Commercialista');
   }
   if (S.overdraft.limit > 0) cashMove(-S.overdraft.limit * 0.005 / 12, 'commissioni', null, 'Fido bancario');
+  labourInspection();
   monthlyDepreciation();
   pruneDetail();
   // IVA del mese precedente

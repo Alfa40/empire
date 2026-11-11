@@ -39,7 +39,7 @@ const TUTORIAL = [
   { id: 'advisor', nav: ['dash', 'bizlist', 'biz'], adv: true, manual: true, title: 'Rosso o verde',
     text: () => ['Bordo verde = tutto a posto.', 'Bordo rosso = c\'è un problema.', 'Dentro, ciò che non va è in rosso: sistemalo tu.'], enter: () => { UI.view = 'biz'; UI.biz = S.biz[0].id; UI.tab = 'riepilogo'; } },
   { id: 'end', nav: ALL_NAV, adv: true, manual: true, last: true, title: 'Ora tocca a te',
-    text: () => ['1° del mese: stipendi e affitti.', 'Il 16: IVA.', '» per avanzare più giorni.', 'Menu: banca, immobili, borsa, ricerca…'] },
+    text: () => ['1° del mese: stipendi e affitti.', 'Il 16: IVA.', '» per avanzare più giorni.', 'In alto nella Home: il tuo prossimo obiettivo.'] },
 ];
 
 function tutorialState() {

@@ -18,6 +18,16 @@ Apri `index.html` con un browser moderno (Edge, Chrome, Firefox). Non servono in
 
 I salvataggi restano nel browser (5 slot e salvataggio automatico). Per fare un backup o spostare la partita su un altro dispositivo usa **Impostazioni → Esporta file / Importa file**.
 
+## Percorso
+
+Il gioco si apre un pezzo alla volta: prima una sola attività (bar, pizzeria, parrucchiere o negozio di abbigliamento), poi il secondo locale, la catena, gli altri settori, la produzione e gli investimenti.
+Ogni traguardo sblocca nuove funzioni e apre una breve lezione sui concetti veri (costo del lavoro, liquidità, imposte, economie di scala...) con i numeri della partita.
+Alla nuova partita si può scegliere **Tutto sbloccato** per avere subito ogni funzione.
+
+## Persone
+
+Regole del lavoro italiane semplificate: 40 ore da contratto, massimo 48 e un giorno di riposo ogni 7 (altrimenti multe dell'Ispettorato), malattia pagata dall'INPS per metà dal 4° giorno, esaurimento da troppa stanchezza, promozioni a responsabile e clima di squadra.
+
 ## Interfaccia
 
 - **Panoramica (Home):** tutto in una schermata corta.

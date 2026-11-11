@@ -104,9 +104,10 @@ function render() {
   applyTheme();
   if (!S) { app.innerHTML = viewStart(); renderModal(); return; }
   tutorialCheck();
+  progressCheck(); progressPopup();
   const tut = tutorialState();
   const cur = UI.view === 'biz' ? 'bizlist' : UI.view;
-  const navHtml = NAV.map(n => {
+  const navHtml = NAV.filter(n => !n || viewOk(n[0])).map(n => {
     if (!n) return '<div class="sep"></div>';
     const [id, ic, label] = n;
     let cnt = '';
@@ -212,7 +213,7 @@ MODALS.money = () => {
 ACT.menu = () => openModal('menu');
 MODALS.menu = () => {
   const tut = tutorialState();
-  return sheet('Menu', `${tut ? '' : recentRow()}<div class="menu-grid">${NAV.filter(Boolean).map(([id, ic, l]) => `<button data-a="nav" data-v="${id}"${navAllowed(id, tut) ? '' : ' disabled'} class="${UI.view === id ? 'on' : ''} ${tut && tut.hl === id ? 'hl' : ''}"><span class="ic">${ic}</span>${l}</button>`).join('')}</div>`);
+  return sheet('Menu', `${tut ? '' : recentRow()}<div class="menu-grid">${S && S.prog && !S.prog.all ? '<button data-a="path"><span class="ic">🗺️</span>Percorso</button>' : ''}${NAV.filter(n => n && viewOk(n[0])).map(([id, ic, l]) => `<button data-a="nav" data-v="${id}"${navAllowed(id, tut) ? '' : ' disabled'} class="${UI.view === id ? 'on' : ''} ${tut && tut.hl === id ? 'hl' : ''}"><span class="ic">${ic}</span>${l}</button>`).join('')}</div>`);
 };
 // avanzamento
 ACT.advMenu = () => openModal('adv');
@@ -226,10 +227,12 @@ MODALS.adv = () => {
 };
 
 // ---------- navigazione ----------
-ACT.nav = (d) => { UI.view = d.v; UI.modal = null; if (d.v !== 'biz') UI.biz = null; render(); window.scrollTo(0, 0); };
+ACT.nav = (d) => { if (!viewOk(d.v)) { lockedMsg(VIEW_FEAT[d.v]); return; } UI.view = d.v; UI.modal = null; if (d.v !== 'biz') UI.biz = null; render(); window.scrollTo(0, 0); };
 ACT.openBiz = (d) => { UI.modal = null; UI.view = 'biz'; UI.biz = d.id; UI.tab = d.tab || (UI.biz === d.id ? UI.tab : 'riepilogo') || 'riepilogo'; render(); window.scrollTo(0, 0); };
 ACT.tab = (d) => { UI.tab = d.t; render(); };
 ACT.finTab = (d) => { UI.fin.tab = d.t; render(); };
+/** funzione non ancora sbloccata: dice quale traguardo serve */
+function lockedMsg(f) { const m = MILESTONES.find(x => x.id === FEATURE_OF[f]); toast(m ? `Si sblocca con il traguardo "${m.n}"` : 'Non ancora disponibile', 'err'); }
 
 // ---------- avanzamento ----------
 function daysToMonthEnd() { const t = ymd(S.day); return daysInMonth(t.y, t.m) - t.d + 1; }

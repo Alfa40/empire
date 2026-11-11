@@ -115,6 +115,7 @@ function newGame(opts) {
     tax: { ivaDebit: 0, ivaCredit: 0, ivaDue: 0, ivaCarry: 0, due: [], lossCarry: 0, yearRevenue: 0, prevYearRevenue: 0, warnings: 0 },
     assets: [], log: [], events: [], ach: {}, hist: [], report: null,
     tutorial: { active: !!opts.tutorial, step: 0 },
+    prog: { all: !!opts.all, done: {}, queue: [] },
     franchise: { on: false, brand: null, affiliates: 0, fee: 0, entry: 0 },
     over: false, counters: { sold: 0, revenue: 0 }, nw: diff.cash, maxNw: diff.cash,
     settings: { autoMinor: true },
@@ -203,6 +204,7 @@ function importSave(text, slot) {
   S = migrate(s); S.meta.slot = slot; RNG_STATE = S.rng | 0; ensureShifts(); saveGame(slot);
 }
 function migrate(s) {
+  if (!s.prog) s.prog = { all: true, done: {}, queue: [] };
   s.settings = s.settings || { autoMinor: true };
   s.effects = s.effects || [];
   s.franchise = s.franchise || { on: false, brand: null, affiliates: 0, fee: 0, entry: 0 };

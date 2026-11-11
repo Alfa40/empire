@@ -53,12 +53,14 @@ function startNewForm(meta) {
     <div class="cards">${['forfettario', 'ditta', 'srl'].map(k => `<button class="card ${lg === k ? 'on' : ''}" data-a="ngLegal" data-v="${k}"><h4>${LEGAL_FORMS[k].name}</h4>${LEGAL_FORMS[k].setup ? `<div class="kv">Costo <b>${eur0(LEGAL_FORMS[k].setup)}</b></div>` : ''}</button>`).join('')}</div>
     <div class="grid g2 mt">
       <label class="field"><span>Slot</span><select id="ng_slot">${Array.from({ length: SLOTS }, (_, i) => { const s = i + 1; const inf = slotInfo(s); return `<option value="${s}"${s === freeSlot ? ' selected' : ''}>Slot ${s}${inf ? ' · sovrascrive ' + esc(inf.company || '') : ''}</option>`; }).join('')}</select></label>
+      <label class="field"><span>Percorso ${hb('percorso')}</span><label class="row"><input type="checkbox" id="ng_all" ${UI.start.all ? 'checked' : ''}> Tutto sbloccato (esperti)</label></label>
       <label class="field"><span>Tutorial</span><label class="row"><input type="checkbox" id="ng_tut" ${forced || UI.start.tut !== false ? 'checked' : ''} ${forced ? 'disabled' : ''}> ${forced ? 'Obbligatorio' : 'Mostra'}</label></label>
     </div>
     <div class="row" style="justify-content:flex-end">${btn('Indietro', 'startMode', { m: 'menu' })}${btn('Inizia ▶', 'startNew', {}, 'pri big')}</div></div>`;
 }
 function readStartForm() {
-  const p = $('#ng_player'), c = $('#ng_company'), t = $('#ng_tut');
+  const p = $('#ng_player'), c = $('#ng_company'), t = $('#ng_tut'), a = $('#ng_all');
+  if (a) UI.start.all = a.checked;
   if (p) UI.start.player = p.value; if (c) UI.start.company = c.value; if (t && !t.disabled) UI.start.tut = t.checked;
 }
 ACT.startMode = (d) => { UI.start.mode = d.m; render(); };
@@ -69,7 +71,7 @@ ACT.startNew = () => {
   const meta = getMeta();
   const slot = +$('#ng_slot').value;
   const tut = !meta.tutorialDone || UI.start.tut !== false;
-  newGame({ player: (UI.start.player || '').trim() || 'Imprenditore', company: (UI.start.company || '').trim() || 'La mia impresa', difficulty: UI.start.diff || 'normale', legal: UI.start.legal || 'ditta', slot, tutorial: tut });
+  newGame({ player: (UI.start.player || '').trim() || 'Imprenditore', company: (UI.start.company || '').trim() || 'La mia impresa', difficulty: UI.start.diff || 'normale', legal: UI.start.legal || 'ditta', slot, tutorial: tut, all: !!UI.start.all });
   saveGame(slot);
   UI.view = 'dash'; UI.modal = null; UI.start.mode = 'menu';
   render();
@@ -137,7 +139,8 @@ VIEWS.bizlist = () => {
 };
 
 // ===================== APERTURA =====================
-ACT.openWizard = () => { UI.wiz = { step: 1, type: null, city: S.biz[0] ? S.biz[0].city : 'milano', district: 'semicentro', listing: null, prop: null, name: '', brand: '' }; openModal('wizard'); };
+ACT.openWizard = () => {
+  if (S.biz.length >= maxBiz()) { const m = curMilestone(); toast(m ? `Per un'altra attività: ${m.goal}` : 'Limite raggiunto', 'err'); return; } UI.wiz = { step: 1, type: null, city: S.biz[0] ? S.biz[0].city : 'milano', district: 'semicentro', listing: null, prop: null, name: '', brand: '' }; openModal('wizard'); };
 ACT.wizType = (d) => { UI.wiz.type = d.v; UI.wiz.step = 2; if (!districtAllowed(d.v, UI.wiz.district)) UI.wiz.district = 'periferia'; render(); };
 ACT.wizStep = (d) => { UI.wiz.step = +d.s; render(); };
 ACT.wizCity = (d) => { UI.wiz.city = d.v; UI.wiz.listing = null; UI.wiz.prop = null; render(); };
@@ -164,11 +167,12 @@ MODALS.wizard = () => {
   let body = '', help = 'tipo';
   if (w.step === 1) {
     const sectors = {};
-    for (const T of Object.values(BUSINESS_TYPES)) (sectors[T.sector] = sectors[T.sector] || []).push(T);
+    for (const T of Object.values(BUSINESS_TYPES)) if (typeOk(T)) (sectors[T.sector] = sectors[T.sector] || []).push(T);
     body = Object.entries(sectors).map(([sname, list]) => `<h4>${sname}</h4><div class="cards">${list.map(T => {
       const eqc = sum(T.equip.filter(e => e.req), e => e.cost) * S.eco.priceLevel * 1.22;
       return `<button class="card ${w.type === T.id ? 'on' : ''}" data-a="wizType" data-v="${T.id}"${tut && !T.tutorial ? ' disabled' : ''}><span class="cico">${T.icon}</span><h4>${esc(T.name)}</h4><div class="kv">Avvio ≈ <b>${eur0(T.license + eqc)}</b></div><div class="kv">Superficie <b>${num(T.size)} m²</b></div></button>`;
     }).join('')}</div>`).join('');
+    if (!has('tipi_tutti')) body = '<small class="muted">🗺️ Gli altri settori si sbloccano andando avanti nel percorso.</small>' + body;
   } else if (w.step === 2) {
     help = 'quartiere';
     const T = BUSINESS_TYPES[w.type], c = CITY[w.city];

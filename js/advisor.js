@@ -42,7 +42,7 @@ function adviseBiz(b) {
       if (f) for (const g of f.probs) if (g.lim !== 'nessuno') (need[g.lim] = need[g.lim] || []).push(WEEKDAYS_SHORT[d]);
     }
     if (gaps.length) add('r', `Ore scoperte: ${gaps.join(' ')}`, [shifts], 'turni');
-    for (const r in need) add('r', `Pochi ${ROLES[r].name.toLowerCase()}: ${need[r].join(' ')}`, [shifts, ['Assumi', 'hireOpen', { target: b.id, role: r }]], 'turni');
+    for (const r in need) add('r', `Manca un ${ROLES[r].name.toLowerCase()}: ${need[r].join(" ")}`, [shifts, ['Assumi', 'hireOpen', { target: b.id, role: r }]], 'turni');
   }
   // ---- scorte ----
   if (t.stockouts && t.stockouts.length) add('r', `${T.mode === 'shop' ? 'Esauriti' : 'Mancano'}: ${t.stockouts.slice(0, 3).join(', ')}${t.stockouts.length > 3 ? '…' : ''}`, [['Ordina subito', 'advOrder', { b: b.id }]], 'magazzino');
@@ -64,6 +64,8 @@ function adviseBiz(b) {
   const sad = emps.filter(e => e.morale < 40), tired = emps.filter(e => e.fatigue > 70);
   if (sad.length) add(sad.some(e => e.morale < 30) ? 'r' : 'y', `${sad.length} scontenti`, [], 'personale');
   if (tired.length) add('y', `${tired.length} stanchi`, [shifts], ['personale', 'turni']);
+  const illegal = empsOf(b.id).filter(e => lawIssues(e).length);
+  if (illegal.length) add('r', `Orari fuori legge: ${illegal.map(e => e.first).join(', ')}`, [shifts], ['personale', 'turni']);
   const expiring = emps.filter(e => e.end && e.end - S.day <= 20 && e.contract !== 'apprendistato');
   if (expiring.length) add('b', `${expiring.length} contratti in scadenza`, [], 'personale');
   // ---- attrezzature ----

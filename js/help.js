@@ -4,6 +4,11 @@
    ogni voce: [titolo, [punti...]]
    ============================================================ */
 const HELP = {
+  riposo: ['Orari e riposo', ['Contratto tipo: 40 ore a settimana; oltre sono straordinari pagati +25%.', 'Per legge massimo 48 ore a settimana e almeno 1 giorno di riposo ogni 7.', 'Chi lavora troppo si stanca, rende meno e si ammala più spesso.', 'Orari fuori legge: l\'Ispettorato del lavoro può fare controlli e multe.']],
+  malattia: ['Malattia', ['Il dipendente malato resta a casa e va sostituito nei turni.', 'Primi 3 giorni: li paghi tu.', 'Dal 4° giorno: l\'INPS copre metà della paga (te la ritrovi negli stipendi).', 'Troppa stanchezza per giorni porta all\'esaurimento: 5-10 giorni di malattia.']],
+  clima: ['Clima di squadra', ['Media del morale della squadra, meno la stanchezza.', 'Aiutano: un responsabile, un leader, orari in regola.', 'Il clima si trasmette: una squadra serena tiene alto il morale di tutti.']],
+  carriera: ['Carriera', ['Le persone vogliono crescere: senza aumenti da più di un anno il morale cala.', 'Con competenza 65 o più puoi promuovere a Responsabile (paga più alta, +morale).', 'Gli ambiziosi chiedono di crescere prima.']],
+  percorso: ['Percorso', ['Il gioco si apre un pezzo alla volta.', 'Prima una attività, poi la catena, poi altri settori.', 'Ogni traguardo sblocca funzioni nuove e una lezione breve sui concetti veri.', 'Tocca un traguardo fatto per rileggerne la lezione.']],
   panoramica: ['Panoramica', ['Tutto in una schermata.', 'Verde = ok, rosso = qualcosa da sistemare, grigio = spento o a riposo.', 'Tocca un riquadro per aprirne la scheda e cambiarlo.', 'Tocca il titolo di una riga per la sezione completa.']],
   // generali
   cassa: ['Cassa', ['Soldi disponibili sul conto.', 'Può andare in negativo fino al fido.', 'Oltre il fido per 30 giorni = fallimento.']],

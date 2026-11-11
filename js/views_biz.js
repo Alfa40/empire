@@ -7,7 +7,8 @@ function curBiz() { return getBiz(UI.biz); }
 const EQ_KIND = { speed: 'Velocità', phys: 'Capacità', quality: 'Qualità', prod: 'Produzione' };
 const CONTRACTS = { indeterminato: 'Indeterminato', determinato: 'Determinato', apprendistato: 'Apprendistato', stagionale: 'Stagionale' };
 const BIZ_TABS = {};
-function bizTabs(T) {
+function bizTabs(T) { return _bizTabs(T).filter(t => !TAB_FEAT[t[0]] || has(TAB_FEAT[t[0]])); }
+function _bizTabs(T) {
   return T.mode === 'shop'
     ? [['riepilogo', 'Riepilogo'], ['giornata', 'Giornata'], ['turni', 'Turni'], ['personale', 'Personale'], ['prodotti', 'Prezzi'], ['magazzino', 'Magazzino'], ['attrezzature', 'Attrezzature'], ['miglioramenti', 'Migliorie'], ['marketing', 'Marketing'], ['impostazioni', 'Impostazioni'], ['statistiche', 'Conti'], ['recensioni', 'Recensioni']]
     : [['riepilogo', 'Riepilogo'], ['produzione', 'Produzione'], ['giornata', 'Giornata'], ['turni', 'Turni'], ['personale', 'Personale'], ['magazzino', 'Magazzino'], ['attrezzature', 'Attrezzature'], ['miglioramenti', 'Migliorie'], ['impostazioni', 'Impostazioni'], ['statistiche', 'Conti']];
@@ -22,7 +23,7 @@ function tileInfo(b, id) {
   const emps = empsOf(b.id);
   switch (id) {
     case 'giornata': { const lost = x.lost || 0; return [T.mode === 'shop' ? (lost ? `−${num(lost)} persi` : num(x.cust || 0) + ' clienti') : num1(x.prod || 0) + ' prodotti', lost > 2 ? 'r' : null]; }
-    case 'turni': { let g = 0; for (let d = 0; d < 7; d++) if (dayBad(b, d)) g++; return [g ? `${g} giorni da sistemare` : emps.length + ' persone', g ? 'r' : null]; }
+    case 'turni': { let g = 0; for (let d = 0; d < 7; d++) if (dayBad(b, d)) g++; return [g ? `${plural(g, "giorno", "giorni")} da sistemare` : emps.length + ' persone', g ? 'r' : null]; }
     case 'personale': { const sad = emps.filter(e => e.morale < 40).length; return [sad ? `${sad} scontenti` : plural(emps.length, 'dipendente', 'dipendenti'), sad ? 'y' : null]; }
     case 'prodotti': { let off = 0; for (const p of b.products) if (p.on) { const r = p.price / refPrice(b, p); if (r > 1.2 || r < 0.82) off++; } return [off ? `${off} prezzi fuori` : b.products.filter(p => p.on).length + ' attivi', off ? 'y' : null]; }
     case 'produzione': return [MATERIALS[b.output].name, t.full ? 'y' : null];
@@ -41,14 +42,14 @@ function bizHubTiles(b, fromSheet) {
   const adv = adviseBiz(b);
   const ids = bizTabs(T).map(t => t[0]).filter(id => id !== 'riepilogo');
   return `<div class="tiles">${ids.map(id => {
-    const [ic, label] = BIZ_SECTIONS[id];
+    const [ic, label, col] = BIZ_SECTIONS[id];
     let [m, flag] = tileInfo(b, id);
     const st = areaStatus(b, id, adv);
     // riquadro rosso: il motivo deve essere scritto sul riquadro
     if (st === 'bad' && flag !== 'r') { const a = adv.find(x => x.lv !== 'b' && x.area.includes(id)); if (a) m = esc(a.t); }
     const dis = tut && tut.tabs && !tut.tabs.includes(id);
     const hl = tut && tut.tab === id;
-    return `<button class="tile st-${st} ${hl ? 'hl' : ''}" data-a="${fromSheet ? 'openBiz' : 'tab'}" data-id="${b.id}" data-t="${id}" data-tab="${id}"${dis ? ' disabled' : ''}><span class="ic">${ic}</span><b>${label}</b><span class="m">${m}</span></button>`;
+    return `<button class="tile st-${st} c-${col} ${hl ? 'hl' : ''}" data-a="${fromSheet ? 'openBiz' : 'tab'}" data-id="${b.id}" data-t="${id}" data-tab="${id}"${dis ? ' disabled' : ''}><span class="ic">${ic}</span><b>${label}</b><span class="m">${m}</span></button>`;
   }).join('')}</div>`;
 }
 function bizPills(b) {
@@ -65,7 +66,7 @@ VIEWS.biz = () => {
   if (!bizTabs(T).some(t => t[0] === UI.tab)) UI.tab = 'riepilogo';
   const dot = b.status === 'setup' ? 'y' : b.status === 'paused' ? 'r' : 'g';
   if (UI.tab === 'riepilogo') {
-    return `<div class="bizhead">${btn('◀', 'nav', { v: 'bizlist' }, 'sm back', false, 'Attività')}<span class="bico">${T.icon}</span><h1>${esc(b.name)}</h1></div><p class="summary">${bizSummary(b)}</p>${BIZ_TABS.riepilogo(b, T)}`;
+    return `<div class="bizhead">${btn('◀', 'nav', { v: 'bizlist' }, 'sm back', false, 'Attività')}</div>${bizHero(b)}${BIZ_TABS.riepilogo(b, T)}`;
   }
   const [ic, label, c] = BIZ_SECTIONS[UI.tab];
   return `<div class="bizhead">${btn('◀', 'tab', { t: 'riepilogo' }, 'sm back', false, 'Torna a ' + b.name)}<span class="bico">${ic}</span><h1>${label}</h1></div>${(BIZ_TABS[UI.tab] || BIZ_TABS.riepilogo)(b, T)}`;
@@ -129,7 +130,7 @@ BIZ_TABS.turni = (b, T) => {
   const fh = {}; if (fc) for (const x of fc.hours) fh[x.h] = x;
   if (fc) est = h => fh[h] ? fh[h].d : 0;
   const head = `<tr><th class="nm">${WEEKDAYS[wd]}</th>${hours.map(h => `<th>${h}</th>`).join('')}</tr>`;
-  const rows = emps.map(e => `<tr><td class="nm ${e.fatigue > 70 ? 'bad' : ''}"><b>${esc(e.first)}</b><small>${esc(ROLES[e.role].name)} · ${e.wdays[wd] ? shiftLabel(e, wd) : 'riposo'}${e.fatigue > 70 ? ' · <span class="neg">stanco ' + Math.round(e.fatigue) + '%</span>' : ''}</small></td>${hours.map(h => {
+  const rows = emps.map(e => `<tr><td class="nm ${e.fatigue > 70 ? 'bad' : ''}"><b>${esc(e.first)}</b><small>${esc(ROLES[e.role].name)} · ${e.wdays[wd] ? shiftLabel(e, wd) : 'riposo'}${e.fatigue > 70 ? ' · <span class="neg">stanco ' + Math.round(e.fatigue) + '%</span>' : ''}${lawIssues(e).length ? ' · <span class="neg">' + lawIssues(e).join(', ') + '</span>' : ''}</small></td>${hours.map(h => {
     const on = e.wdays[wd] && onShift(e, h, wd);
     return `<td class="cell ${on ? 'on' : ''} ${!e.wdays[wd] ? 'off' : isOpen(h) ? 'open' : ''}"><button data-a="shiftAt" data-e="${e.id}" data-h="${h}" aria-label="${esc(e.first)} dalle ${h}"></button></td>`;
   }).join('')}</tr>`).join('');
@@ -161,7 +162,7 @@ ACT.empDay = (d) => { const e = S.emps[d.e]; if (!e) return; e.wdays[+d.i] = e.w
 // ---------- Personale ----------
 BIZ_TABS.personale = (b) => {
   const emps = empsOf(b.id);
-  return sec(`Personale · ${emps.length}`, 'ruoli', emps.length ? '<small class="muted">Competenza · stipendio</small>' + roleSections(emps, e => e.role, empChip, s => `<div class="ovcs">${s}</div>`) : '<p class="muted">Nessuno.</p>',
+  return climateBox(b) + sec(`Personale · ${emps.length}`, 'ruoli', emps.length ? '<small class="muted">Competenza · stipendio</small>' + roleSections(emps, e => e.role, empChip, s => `<div class="ovcs">${s}</div>`) : '<p class="muted">Nessuno.</p>',
     btn('+ Assumi', 'hireOpen', { target: b.id }, 'sm pri' + (tutorialHl('hire') ? ' hl' : '')));
 };
 function empRow(e) {
@@ -171,7 +172,7 @@ function empRow(e) {
     [`${eur0(e.wage)} <small class="${e.wage < mw * 0.95 ? 'neg' : 'muted'}">${e.wage < mw * 0.95 ? '▼' : e.wage > mw * 1.05 ? '▲' : '='}</small>`, 'n'],
     st === 'Attivo' ? badge('Attivo', 'g') : badge(st, 'y'), btn('⋯', 'empSheet', { e: e.id }, 'sm')], empBad(e) ? 'bad' : '');
 }
-function empBad(e) { return e.morale < 40 || e.fatigue > 70 || (e.end && e.end - S.day <= 20 && e.contract !== 'apprendistato'); }
+function empBad(e) { return lawIssues(e).length > 0 || e.morale < 40 || e.fatigue > 70 || (e.end && e.end - S.day <= 20 && e.contract !== 'apprendistato'); }
 ACT.empSheet = (d) => openModal('emp', { e: d.e });
 MODALS.emp = (m) => {
   const e = S.emps[m.e]; if (!e) return '';
@@ -182,13 +183,14 @@ MODALS.emp = (m) => {
   const tabs = [hasShift && ['turno', '🗓️ Turno'], ['paga', '💶 Paga'], ['altro', '🎓 Altro']].filter(Boolean);
   const stat = (l, v, bad, k) => `<button class="ovc ov-${bad ? 'bad' : 'ok'}" data-a="help" data-k="${k}"><span class="l">${l}</span><b>${v}</b></button>`;
   let body = '';
-  if (tab === 'turno') body = `<div class="emp-shift">${dayToggles('empDay', e.wdays, { e: e.id })}<div class="row">${stepper('empStart', { e: e.id }, String(e.start || 0).padStart(2, '0') + ':00', 'inizio')}${stepper('empHrs', { e: e.id }, e.hours + ' h', 'al giorno')}</div><small class="muted">${weeklyHours(e)} h/settimana${weeklyHours(e) > 40 ? ' · straordinari' : ''}</small></div>`;
+  if (tab === 'turno') body = `<div class="emp-shift">${dayToggles('empDay', e.wdays, { e: e.id })}<div class="row">${stepper('empStart', { e: e.id }, String(e.start || 0).padStart(2, '0') + ':00', 'inizio')}${stepper('empHrs', { e: e.id }, e.hours + ' h', 'al giorno')}</div></div>${wellbeingBox(e)}`;
   else if (tab === 'paga') body = `<div class="kvl"><span>Stipendio ${hb('stipendio')}</span>${numIn('empWage', e.wage, { e: e.id }, 'step="10" min="500" style="width:6.5rem"')}</div>
     <div class="kvl"><span>Mercato</span><b class="${e.wage < mw * 0.95 ? 'neg' : ''}">${eur0(mw)}</b></div>
     <div class="kvl"><span>Costo/mese</span><b>${eur0(empMonthlyCost(e) * 1.37)}</b></div>
-    <div class="kvl"><span>Contratto ${hb('contratto')}</span><b>${esc(CONTRACTS[e.contract])}${e.end ? ' · ' + fmtDateShort(e.end) : ''}</b></div>`;
+    <div class="kvl"><span>Contratto ${hb('contratto')}</span><b>${esc(CONTRACTS[e.contract])}${e.end ? ' · ' + fmtDateShort(e.end) : ''}</b></div>${hasShift ? '' : wellbeingBox(e)}`;
   else body = `<div class="row mb">${badge(e.age + ' anni')} ${e.traits.map(t => `<span class="badge p" title="${esc(TRAITS[t].d)}">${esc(TRAITS[t].n)}</span>`).join(' ')} ${badge('Ferie ' + Math.floor(e.holidays) + ' gg')}</div>
     <h4>Formazione ${hb('formazione')}</h4><div class="seg">${COURSES.map(c => btn(`${c.n} · ${eur0(c.cost * (hasResearch('formazione') ? 0.7 : 1) * 1.22)}`, 'empTrain', { e: e.id, c: c.id }, 'sm', e.skill >= c.max || (c.min && e.skill < c.min) || e.trainUntil > S.day)).join('')}</div>
+    ${careerBox(e)}
     ${others.length ? `<h4>Trasferisci</h4>${select('empMove', [['', '—'], ...others.map(o => [o.id, o.name])], '', { e: e.id })}` : ''}`;
   return sheet(`${esc(empName(e))} <small class="muted">${esc(ROLES[e.role].name)}</small>`, `<div class="ovcs mb">${stat('Competenza', Math.round(e.skill), false, 'competenza')}${stat('Morale', Math.round(e.morale), e.morale < 40, 'morale')}${stat('Stanchezza', Math.round(e.fatigue), e.fatigue > 70, 'stanchezza')}</div>
     <div class="seg mb">${tabs.map(([k, l]) => btn(l, 'empTab', { t: k }, 'sm ' + (tab === k ? 'on' : ''))).join('')}</div>${body}`,
@@ -279,7 +281,7 @@ MODALS.hire = () => {
   }
   const list = (S.candidates[H.city] || []).filter(x => roles.includes(x.role) && (!H.role || x.role === H.role)).sort((a, z) => z.skill - a.skill);
   return sheet('Assumi', `<div class="row mb">
-      ${select('hireTarget', [['', 'Dove…'], ['hq', 'Sede'], ...S.biz.map(x => [x.id, x.name])], H.target || '')}
+      ${select('hireTarget', [['', 'Dove…'], ...(has('hq') ? [['hq', 'Sede']] : []), ...S.biz.map(x => [x.id, x.name])], H.target || '')}
       ${b ? '' : select('hireCity', CITIES.map(x => [x.id, x.name]), H.city)}
       ${select('hireRole', [['', 'Tutti i ruoli'], ...roles.map(r => [r, ROLES[r].name])], H.role)}
       ${btn('📣 Annuncio 183 €', 'hireAd', {}, 'sm', !H.role)}</div>

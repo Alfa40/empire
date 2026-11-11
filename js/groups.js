@@ -54,7 +54,16 @@ function splitEmpLabel(w) {
   return role ? { name: m[1], role, extra: m[3] || '' } : null;
 }
 /** perché una persona è in rosso */
-function empWhy(e) { return e.fatigue > 70 ? 'stanco ' + Math.round(e.fatigue) + '%' : e.morale < 40 ? 'morale ' + Math.round(e.morale) : 'contratto in scadenza'; }
+function empWhy(e) { return lawIssues(e).length ? lawIssues(e)[0] : e.fatigue > 70 ? 'stanco ' + Math.round(e.fatigue) + '%' : e.morale < 40 ? 'morale ' + Math.round(e.morale) : 'contratto in scadenza'; }
+function staffSentence(all) {
+  if (!all.length) return '<p class="say">💬 Nessun dipendente: tocca "+ Assumi".</p>';
+  const tired = all.filter(e => e.fatigue > 70).length, sad = all.filter(e => e.morale < 40).length, sick = all.filter(e => e.sickUntil > S.day).length;
+  const bits = [];
+  if (tired) bits.push(`<b>${plural(tired, 'persona stanca', 'persone stanche')}</b> (dai più riposo nei turni)`);
+  if (sad) bits.push(`<b>${plural(sad, 'persona scontenta', 'persone scontente')}</b> (stipendio o carico di lavoro)`);
+  if (sick) bits.push(`${plural(sick, 'persona', 'persone')} in malattia`);
+  return `<p class="say">💬 ${bits.length ? 'Da guardare: ' + bits.join(', ') + '.' : 'La squadra sta bene: morale medio ' + Math.round(avg(all, e => e.morale)) + '.'}</p>`;
+}
 function empChip(e) {
   const b = e.biz === 'hq' ? null : getBiz(e.biz);
   const st = empStatus(e), away = st !== 'Attivo';
@@ -69,6 +78,7 @@ VIEWS.staff = () => {
   }).join('');
   return `<div class="ov-head"><h1>Personale</h1>${hb('ruoli')}</div>
     <div class="ovcs ovg">${ovChip('👥 Persone', all.length, 'ok', 'help', { k: 'ruoli' })}${ovChip('💶 Costo/mese', eur0(sum(all, e => empMonthlyCost(e) * 1.37)), 'ok', 'help', { k: 'stipendio' })}${ovChip('🙂 Morale', all.length ? Math.round(avg(all, e => e.morale)) : '–', sad ? 'bad' : 'ok', 'help', { k: 'morale' })}</div>
+    ${staffSentence(all)}
     <div class="row mb">${select('stFilter', [['', 'Ovunque'], ['hq', 'Sede'], ...S.biz.map(b => [b.id, b.name])], UI.st.filter)}${btn('+ Assumi', 'hireOpen', {}, 'pri')}</div>
     ${tiles ? `<div class="ovts">${tiles}</div>` : '<p class="muted">Nessun dipendente.</p>'}`;
 };
@@ -82,17 +92,17 @@ MODALS.staffGroup = (M) => {
 
 // ===================== FINANZA =====================
 const FIN_GROUPS = [
-  { id: 'vendite', ic: '🛒', n: 'Vendite', cats: ['vendite', 'ingrosso', 'interni'] },
-  { id: 'rendite', ic: '🏘️', n: 'Affitti incassati e rendite', cats: ['affitti_attivi', 'royalties', 'dividendi', 'plusvalenze', 'altri_ricavi', 'cessioni'] },
-  { id: 'personale', ic: '👥', n: 'Spese per dipendenti', cats: ['stipendi', 'contributi', 'formazione', 'tfr_pagato'] },
-  { id: 'affitti', ic: '🏠', n: 'Affitti', cats: ['affitto'] },
-  { id: 'fisse', ic: '💡', n: 'Spese fisse', cats: ['utenze', 'assicurazioni', 'consulenze'] },
-  { id: 'merci', ic: '📦', n: 'Merci e materie prime', cats: ['materiali'] },
-  { id: 'gestionali', ic: '📋', n: 'Spese gestionali', cats: ['marketing', 'ricerca', 'licenze', 'commissioni'] },
-  { id: 'manutenzione', ic: '🔧', n: 'Manutenzione', cats: ['manutenzione'] },
-  { id: 'tasse', ic: '🧾', n: 'Tasse e imposte', cats: ['imposte', 'imposte_varie', 'iva', 'versamento_imposte'] },
-  { id: 'banca', ic: '🏦', n: 'Banca e finanziamenti', cats: ['interessi', 'finanziamenti', 'rimborsi', 'capitale', 'cauzioni'] },
-  { id: 'invest', ic: '🛠️', n: 'Investimenti e ammortamenti', cats: ['investimenti', 'ammortamenti', 'minusvalenze', 'immobili', 'titoli'] },
+  { id: 'vendite', c: 'green', ic: '🛒', n: 'Vendite', cats: ['vendite', 'ingrosso', 'interni'] },
+  { id: 'rendite', c: 'teal', ic: '🏘️', n: 'Affitti incassati e rendite', cats: ['affitti_attivi', 'royalties', 'dividendi', 'plusvalenze', 'altri_ricavi', 'cessioni'] },
+  { id: 'personale', c: 'orange', ic: '👥', n: 'Spese per dipendenti', cats: ['stipendi', 'contributi', 'formazione', 'tfr_pagato'] },
+  { id: 'affitti', c: 'brown', ic: '🏠', n: 'Affitti', cats: ['affitto'] },
+  { id: 'fisse', c: 'yellow', ic: '💡', n: 'Spese fisse', cats: ['utenze', 'assicurazioni', 'consulenze'] },
+  { id: 'merci', c: 'teal', ic: '📦', n: 'Merci e materie prime', cats: ['materiali'] },
+  { id: 'gestionali', c: 'purple', ic: '📋', n: 'Spese gestionali', cats: ['marketing', 'ricerca', 'licenze', 'commissioni'] },
+  { id: 'manutenzione', c: 'gray', ic: '🔧', n: 'Manutenzione', cats: ['manutenzione'] },
+  { id: 'tasse', c: 'blue', ic: '🧾', n: 'Tasse e imposte', cats: ['imposte', 'imposte_varie', 'iva', 'versamento_imposte'] },
+  { id: 'banca', c: 'gray', ic: '🏦', n: 'Banca e finanziamenti', cats: ['interessi', 'finanziamenti', 'rimborsi', 'capitale', 'cauzioni'] },
+  { id: 'invest', c: 'blue', ic: '🛠️', n: 'Investimenti e ammortamenti', cats: ['investimenti', 'ammortamenti', 'minusvalenze', 'immobili', 'titoli'] },
 ];
 const FIN_PERIODS = [['mese', 'Questo mese'], ['scorso', 'Mese scorso'], ['anno', 'Anno']];
 function finKeys() {
@@ -121,7 +131,7 @@ function finGroupData(tot) {
   }).filter(g => g.lines.length);
 }
 function finTiles(groups, mode, bizId) {
-  return `<div class="ovts">${groups.map(g => `<button class="ovt ${g.v >= 0 ? 'ok' : 'exp'}" data-a="finGroup" data-g="${g.id}" data-m="${mode}"${bizId ? ` data-b="${bizId}"` : ''}><span class="ic">${g.ic}</span><b>${g.n}</b><small class="${cls(g.v)}">${eur0(g.v)}</small></button>`).join('')}</div>`;
+  return `<div class="ovts">${groups.map(g => `<button class="ovt c-${g.c || 'blue'} ${g.v >= 0 ? 'ok' : 'exp'}" data-a="finGroup" data-g="${g.id}" data-m="${mode}"${bizId ? ` data-b="${bizId}"` : ''}><span class="ic">${g.ic}</span><b>${g.n}</b><small class="${cls(g.v)}">${eur0(g.v)}</small></button>`).join('')}</div>`;
 }
 function finPerSeg() { return `<div class="seg mb">${FIN_PERIODS.map(([k, l]) => btn(l, 'finPer', { p: k }, 'sm ' + ((UI.fin.per || 'mese') === k ? 'on' : ''))).join('')}</div>`; }
 function finFilters() {
@@ -132,7 +142,8 @@ ACT.finPer = (d) => { UI.fin.per = d.p; render(); };
 
 const _financeOld = VIEWS.finance;
 VIEWS.finance = () => {
-  const tabs = [['ce', '💶 Entrate e spese'], ['cassa', '🔁 Cassa'], ['sp', '🏛️ Patrimonio'], ['tasse', '🧾 Imposte']];
+  const tabs = [['ce', '💶 Entrate e spese'], ['cassa', '🔁 Cassa'], ['sp', '🏛️ Patrimonio'], ['tasse', '🧾 Imposte']].filter(t => !FIN_FEAT[t[0]] || has(FIN_FEAT[t[0]]));
+  if (!tabs.some(t => t[0] === UI.fin.tab)) UI.fin.tab = 'ce';
   const head = `<div class="ov-head"><h1>Finanza</h1>${hb(UI.fin.tab === 'cassa' ? 'flussi' : UI.fin.tab === 'sp' ? 'sp' : UI.fin.tab === 'tasse' ? 'imposte' : 'ce')}</div><div class="seg mb">${tabs.map(([id, l]) => btn(l, 'finTab', { t: id }, 'sm ' + (UI.fin.tab === id ? 'on' : ''))).join('')}</div>`;
   if (UI.fin.tab === 'sp' || UI.fin.tab === 'tasse') return head + _financeOld().replace(/^<div class="head">[\s\S]*?<\/div><div class="tabs">[\s\S]*?<\/div>/, '');
   const keys = finKeys(), bizId = UI.fin.biz || null;
@@ -153,10 +164,16 @@ VIEWS.finance = () => {
   return head + finFilters()
     + `<div class="ovcs ovg">${ovChip('⬆️ Ricavi', eur0(pl.rev), 'ok', 'help', { k: 'ce' })}${ovChip('⬇️ Costi', eur0(pl.cost), 'ok', 'help', { k: 'ce' })}${ovChip('= Utile', `<span class="${cls(pl.profit)}">${eur0(pl.profit)}</span>`, pl.profit < 0 ? 'bad' : 'ok', 'help', { k: 'utile' })}</div>`
     + (inc.length ? `<h4>Entrate</h4>${finTiles(inc, 'pl')}` : '')
-    + (exp.length ? `<h4>Spese</h4>${finTiles(exp, 'pl')}` : '')
+    + (exp.length ? `<h4>Spese</h4>${finSpend(exp, pl.cost)}${finTiles(exp, 'pl')}` : '')
     + (!groups.length ? '<p class="muted">Nessun movimento nel periodo.</p>' : '')
     + `<div class="mt">${sec('Utile mese per mese', 'ce', trend, '', { closed: true, sum: plural(months.length, 'mese', 'mesi') })}</div>`;
 };
+/** ciambella delle spese con frase: dove vanno i soldi */
+function finSpend(exp, cost) {
+  if (!exp.length || !cost) return '';
+  const top = exp[0], p = Math.round(top.v / cost * 100);
+  return `<div class="spend">${donut(exp.map(g => ({ v: g.v, c: g.c || 'blue' })), 92, eur0(-cost))}<p class="say">💬 La spesa più grande è <b>${esc(top.n.toLowerCase())}</b>: ${p}% dei costi.${exp[1] ? ` Poi ${esc(exp[1].n.toLowerCase())} (${Math.round(exp[1].v / cost * 100)}%).` : ''}</p></div>`;
+}
 
 ACT.finGroup = (d) => openModal('finGroup', { g: d.g, m: d.m, b: d.b || '' });
 MODALS.finGroup = (M) => {
@@ -236,7 +253,7 @@ BIZ_TABS.statistiche = (b) => {
   return finPerSeg()
     + '<div class="ovcs ovg">' + ovChip('⬆️ Ricavi', eur0(pl.rev), 'ok', 'help', { k: 'ce' }) + ovChip('⬇️ Costi', eur0(pl.cost), 'ok', 'help', { k: 'ce' }) + ovChip('= Utile', '<span class="' + cls(pl.profit) + '">' + eur0(pl.profit) + '</span>', pl.profit < 0 ? 'bad' : 'ok', 'help', { k: 'utile' }) + '</div>'
     + (inc.length ? '<h4>Entrate</h4>' + finTiles(inc, 'pl', b.id) : '')
-    + (exp.length ? '<h4>Spese</h4>' + finTiles(exp, 'pl', b.id) : '')
+    + (exp.length ? '<h4>Spese</h4>' + finSpend(exp, pl.cost) + finTiles(exp, 'pl', b.id) : '')
     + (!groups.length ? '<p class="muted">Nessun movimento nel periodo.</p>' : '')
     + '<div class="mt">' + sec('Utile mese per mese', 'ce', trend, '', { closed: true, sum: plural(months.length, 'mese', 'mesi') }) + '</div>'
     + sec('30 giorni', null, histTable(b, 30), '', { closed: true, c: 'green' });

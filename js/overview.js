@@ -27,7 +27,7 @@ function ovAreas(b) {
     if (g) gap++;
     return ovChip(WEEKDAYS[i], closed ? 'chiuso' : unc ? 'scoperto' : g ? '−' + num(f.lost) + ' clienti' : 'ok', closed ? 'off' : g ? 'bad' : 'ok', 'ovDay', { b: b.id, d: i });
   }).join('');
-  out.push({ id: 'turni', ic: '🗓️', title: 'Turni', sum: gap ? `${gap} gg da sistemare` : 'ok', bad: gap > 0, chips: days, note: 'Tocca un giorno per i turni' });
+  out.push({ id: 'turni', ic: '🗓️', title: 'Turni', sum: gap ? `${plural(gap, "giorno", "giorni")} da sistemare` : 'ok', bad: gap > 0, chips: days, note: 'Tocca un giorno per i turni' });
   // persone
   const emps = empsOf(b.id).slice().sort((x, y) => roleRank(x.role) - roleRank(y.role) || (y.wdays[wdNext] - x.wdays[wdNext]) || startOn(x, wdNext) - startOn(y, wdNext));
   const nBad = emps.filter(empBad).length;
@@ -82,9 +82,10 @@ function ovBiz(b) {
   const T = bizType(b);
   const st = b.status === 'setup' ? 'bad' : bizStatus(b);
   const r30 = recentDaily(30, b.id);
-  const tiles = ovAreas(b).map(x => `<button class="ovt ${x.bad ? 'bad' : 'ok'}" data-a="ovArea" data-b="${b.id}" data-t="${x.id}"><span class="ic">${x.ic}</span><b>${x.title}</b><small>${x.sum}</small></button>`).join('');
+  const AC = { turni: 'orange', personale: 'orange', prodotti: 'purple', produzione: 'teal', magazzino: 'teal', attrezzature: 'teal' };
+  const tiles = ovAreas(b).map(x => `<button class="ovt c-${AC[x.id] || 'blue'} ${x.bad ? 'bad' : 'ok'}" data-a="ovArea" data-b="${b.id}" data-t="${x.id}"><span class="ic">${x.ic}</span><b>${x.title}</b><small>${x.sum}</small></button>`).join('');
   const sub = b.status === 'setup' ? 'da completare' : b.status === 'paused' ? 'sospesa' : `<span class="${cls(r30.profit)}">${eur0(r30.profit)}</span> in 30 gg${T.mode === 'shop' ? ' · ' + stars(b.rep) : ''}`;
-  return `<section class="ovb st-${st}"><button class="ovb-t" data-a="openBiz" data-id="${b.id}" data-tab="riepilogo"><span class="bi">${T.icon}</span><span class="nm"><b>${esc(b.name)}</b><small>${sub}</small></span><i>›</i></button><div class="ovts">${tiles}</div></section>`;
+  return `<section class="ovb st-${st}"><button class="ovb-t" data-a="openBiz" data-id="${b.id}" data-tab="riepilogo"><span class="bi c-${bizColor(b)}">${T.icon}</span><span class="nm"><b>${esc(b.name)}</b><small>${sub}</small></span>${b.hist.length >= 2 ? spark(profitSeries(b), 84, 28) : ''}<i>›</i></button><div class="ovts">${tiles}</div></section>`;
 }
 
 function ovGroup() {
@@ -95,9 +96,10 @@ function ovGroup() {
 
 VIEWS.dash = () => {
   let h = `<div class="ov-head"><h1>Panoramica</h1>${hb('panoramica')}</div>`;
+  h += goalCard();
   h += ovGroup();
   h += S.biz.map(ovBiz).join('');
-  h += `<button class="tile st-new ov-new" data-a="openWizard"${tutorialHl('openWizard') ? ' style="outline:3px dashed var(--yellow)"' : ''}><span class="ic">${S.biz.length ? '➕' : '🚀'}</span><b>${S.biz.length ? 'Nuova attività' : 'Apri la prima attività'}</b></button>`;
+  if (S.biz.length < maxBiz()) h += `<button class="tile st-new ov-new" data-a="openWizard"${tutorialHl('openWizard') ? ' style="outline:3px dashed var(--yellow)"' : ''}><span class="ic">${S.biz.length ? '➕' : '🚀'}</span><b>${S.biz.length ? 'Nuova attività' : 'Apri la prima attività'}</b></button>`;
   return h;
 };
 
