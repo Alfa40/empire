@@ -171,3 +171,22 @@ h3.sh { margin: 1rem 0 .2rem; font-size: 1rem; }
 .fh-n b { font-size: 1.7rem; font-weight: 900; line-height: 1.1; }
 .ovt b .cnt { font-weight: 700; color: var(--muted); font-size: .8em; }
 .bhero .hstat b small { color: var(--muted); font-size: .75rem; font-weight: 700; }
+
+/* scontrino costi */
+.bill { display: grid; gap: .6rem; margin: .4rem 0; }
+.bsec { border: 2px solid var(--line); border-left-width: 6px; border-radius: 12px; padding: .45rem .7rem; background: var(--panel); }
+.bsec.now { border-left-color: var(--accent); }
+.bsec.eq { border-left-color: var(--yellow); }
+.bsec.mon { border-left-color: #3b82d6; }
+.bsec.bsum { border-left-color: var(--line2); background: var(--panel2); }
+.bsec h4 { margin: 0 0 .25rem; font-size: .95rem; }
+.bl { display: flex; justify-content: space-between; align-items: baseline; gap: .8rem; padding: .28rem 0; border-bottom: 1px dashed var(--line); }
+.bl:last-child { border-bottom: 0; }
+.bl .bn { min-width: 0; }
+.bl .bn small { display: block; color: var(--muted); font-size: .76rem; line-height: 1.25; }
+.bl b { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bl.plus b { color: var(--green); }
+.bl.tot { border-top: 2px solid var(--line2); border-bottom: 0; margin-top: .15rem; font-weight: 800; }
+.bl.tot b { font-size: 1.05rem; }
+.bl.g b { color: var(--green); } .bl.r b { color: var(--red); }
+.bl.big b { font-size: 1.15rem; }

@@ -148,10 +148,18 @@ ACT.reBuyOk = () => { const M = UI.modal; const r = buyProperty(M.L, M.pct / 100
 MODALS.reBuy = (M) => {
   const L = M.L; const loan = L.price * M.pct / 100;
   const rate = loanRate(BANKS[1], 'mutuo');
-  return sheet(`${esc(PROP_KINDS[L.kind].n)} · ${num(L.m2)} m²`, `<div class="kpis">${kpi('Prezzo', eur0(L.price))}${kpi('Notaio+imposte', eur0(L.price * 0.09))}</div>
-    <h4>Mutuo ${hb('mutuo')}</h4><div class="seg mb">${[0, 30, 50, 70, 80].map(x => btn(x ? x + '%' : 'No', 'reBuyPct', { v: x }, 'sm ' + (M.pct === x ? 'on' : ''))).join('')}</div>
-    ${M.pct ? `<div class="seg mb">${[10, 15, 20, 25, 30].map(x => btn(x + ' anni', 'reBuyYears', { v: x }, 'sm ' + (M.years === x ? 'on' : ''))).join('')}</div><div class="kpis">${kpi('Tasso', pct(rate, 2))}${kpi('Rata', eur0(payment(loan, rate, M.years * 12)))}</div>` : ''}
-    <div class="kpis">${kpi('Paghi ora', eur0(L.price * 1.09 - loan))}${kpi('Cassa', eur0(S.cash))}</div>`, btn('Acquista ✓', 'reBuyOk', {}, 'pri'), { help: 'immobili' });
+  return sheet(`${esc(PROP_KINDS[L.kind].n)} · ${num(L.m2)} m²`, `    <h4>Mutuo ${hb('mutuo')}</h4><div class="seg mb">${[0, 30, 50, 70, 80].map(x => btn(x ? x + '%' : 'No', 'reBuyPct', { v: x }, 'sm ' + (M.pct === x ? 'on' : ''))).join('')}</div>
+    ${M.pct ? `<div class="seg mb">${[10, 15, 20, 25, 30].map(x => btn(x + ' anni', 'reBuyYears', { v: x }, 'sm ' + (M.years === x ? 'on' : ''))).join('')}</div><small class="muted">Tasso ${pct(rate, 2)}</small>` : ''}
+    ${bill([
+      { t: 'Da pagare subito', ic: '🧾', c: 'now', tot: 'Paghi ora', rows: [
+        { n: 'Prezzo', d: 'Quanto chiede il venditore.', v: L.price },
+        { n: 'Notaio', d: 'Scrive e registra il contratto (circa 2%).', v: L.price * 0.02 },
+        { n: 'Imposte di registro', d: 'Tasse sull\'acquisto (circa 7%).', v: L.price * 0.07 },
+        ...(loan ? [{ n: 'Mutuo dalla banca', d: 'Questa parte la paga la banca: la restituisci a rate.', v: loan, plus: true }] : [])] },
+      { t: 'Ogni mese', ic: '📅', c: 'mon', tot: 'Totale al mese', rows: [
+        ...(loan ? [{ n: 'Rata del mutuo', d: `Capitale + interessi per ${M.years} anni.`, v: M.pct ? payment(loan, rate, M.years * 12) : 0 }] : []),
+        { n: 'IMU', d: 'Tassa comunale sugli immobili, divisa per mese.', v: L.price * 0.0031 * 2 / 12 }] },
+    ], [['La tua cassa', eur0(S.cash)], [S.cash >= L.price * 1.09 - loan ? 'Ti resta' : 'Ti mancano', eur0(Math.abs(S.cash - (L.price * 1.09 - loan))), (S.cash >= L.price * 1.09 - loan ? 'g' : 'r') + ' big tot']])}`, btn('Acquista ✓', 'reBuyOk', {}, 'pri'), { help: 'immobili' });
 };
 
 // ===================== BORSA =====================

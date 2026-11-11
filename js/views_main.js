@@ -201,17 +201,43 @@ MODALS.wizard = () => {
     const L = w.listing ? rentListings(w.city, w.district, w.type).find(x => x.id === w.listing) : null;
     const p = w.prop ? S.props.find(x => x.id === w.prop) : null;
     const oc = openingCost(w.type, L || { m2: p ? p.m2 : T.size, condition: 'buono' }, !!p);
-    const eqc = sum(T.equip.filter(e => e.req), e => equipCost(e, 0)) * 1.22;
-    const now = oc.total + (L ? L.agency * 0.22 : 0) + oc.renov * 0.1;
-    body = `<label class="field"><span>Nome</span><input id="wiz_name" value="${esc(w.name)}" data-c="wizName" maxlength="40"></label>
+        body = `<label class="field"><span>Nome</span><input id="wiz_name" value="${esc(w.name)}" data-c="wizName" maxlength="40"></label>
       ${S.brands.length ? `<label class="field"><span>Marchio ${hb('marchio')}</span>${select('wizBrand', [['', '—'], ...S.brands.map(b => [b.id, b.name])], w.brand)}</label>` : ''}
-      ${table(['Voce', ['€', 'n']], [
-        tr(['Licenze', [eur0(oc.license), 'n']]),
-        L ? tr(['Cauzione', [eur0(L.deposit), 'n']]) : '', L ? tr(['1° affitto', [eur0(L.rent), 'n']]) : '', L ? tr(['Agenzia', [eur0(L.agency * 1.22), 'n']]) : '',
-        oc.renov ? tr(['Lavori', [eur0(oc.renov * 1.1), 'n']]) : '',
-        tr(['Subito', [`<b>${eur0(now)}</b>`, 'n']], 'tot'), tr(['Poi attrezzature', [eur0(eqc), 'n']], 'sub'), tr(['Cassa', [eur0(S.cash), 'n']], 'sub')])}
-      ${S.cash < now + eqc ? '<div class="note r">Liquidità scarsa</div>' : ''}`;
+      ${openBill(w.type, w.city, L, p, oc)}`;
   }
   const foot = (w.step > 1 ? btn('◀', 'wizStep', { s: w.step - 1 }) : '') + (w.step === 4 ? btn('Apri ✓', 'wizConfirm', {}, 'pri big') : '');
   return sheet('Nuova attività', stepper + body, foot, { wide: true, help });
 };
+
+// Scontrino di apertura: cosa paghi subito, cosa compri dopo, cosa paghi ogni mese
+function openBill(typeId, cityId, L, p, oc) {
+  const T = BUSINESS_TYPES[typeId];
+  const now = [{ n: 'Licenze e permessi', d: 'SCIA al Comune, iscrizione Camera di Commercio, ASL. Si pagano una volta.', v: oc.license }];
+  if (L) {
+    now.push({ n: 'Cauzione', d: '3 mesi di affitto lasciati al proprietario. Ti tornano se chiudi.', v: L.deposit });
+    now.push({ n: 'Primo affitto', d: 'Il mese in corso, pagato in anticipo.', v: L.rent });
+    now.push({ n: 'Agenzia immobiliare', d: 'Provvigione per averti trovato il locale (IVA 22% inclusa).', v: L.agency * 1.22 });
+  }
+  if (oc.renov) now.push({ n: 'Lavori di sistemazione', d: 'Il locale è da ristrutturare (IVA 10% inclusa).', v: oc.renov * 1.1 });
+  const EQD = { speed: 'Serve a lavorare più in fretta.', quality: 'Conserva e presenta bene i prodotti.', phys: 'Posti e comodità per i clienti.', prod: 'Macchina che produce la merce.' };
+  const eq = T.equip.filter(e => e.req).map(e => ({ n: e.n, d: EQD[e.kind] || '', v: equipCost(e, 0) * 1.22 }));
+  const mon = [];
+  if (L) mon.push({ n: 'Affitto', d: 'Ogni mese al proprietario.', v: L.rent });
+  else if (p) mon.push({ n: 'IMU', d: 'Tassa sull\'immobile tuo, divisa per mese.', v: p.value * 0.0031 * 2 / 12 });
+  const m2 = L ? L.m2 : p ? p.m2 : T.size;
+  const en = (T.energy * Math.pow(m2 / T.size, 0.7) + sum(T.equip.filter(e => e.req), e => e.en)) * S.eco.energy * 30 * 1.22;
+  mon.push({ n: 'Luce, gas e acqua', d: 'Stima: più m² e più macchine = bollette più alte.', v: en });
+  const roles = [...new Set([T.roles[0], T.front].filter(Boolean))];
+  for (const r of roles) mon.push({ n: 'Stipendio: 1 ' + ROLES[r].name, d: 'Paga lorda + contributi INPS (circa +30%). Servono più persone per coprire tutti i turni.', v: marketWage(r, cityId, 50) * 1.3 });
+  mon.push({ n: 'Commercialista', d: 'Tiene i conti e fa le dichiarazioni.', v: (S.biz.length ? 55 : 165) * S.eco.priceLevel * 1.22 });
+  const tNow = sum(now, r => r.v), tEq = sum(eq, r => r.v), need = tNow + tEq, left = S.cash - need;
+  return bill([
+    { t: 'Da pagare subito', ic: '🧾', c: 'now', rows: now, tot: 'Totale subito' },
+    { t: 'Attrezzature indispensabili <small>(IVA incl.)</small>', ic: '🛠️', c: 'eq', rows: eq, tot: 'Totale attrezzature' },
+    { t: 'Ogni mese (stima)', ic: '📅', c: 'mon', rows: mon, tot: 'Totale al mese' },
+  ], [
+    ['Serve per partire', eur0(need)],
+    ['La tua cassa', eur0(S.cash)],
+    [left >= 0 ? 'Ti resta' : 'Ti mancano', eur0(Math.abs(left)), (left >= 0 ? 'g' : 'r') + ' big tot'],
+  ]);
+}
