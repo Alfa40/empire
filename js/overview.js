@@ -22,11 +22,12 @@ function ovAreas(b) {
   const wdNext = ymd(S.day + 1).wd;
   let gap = 0;
   const days = WEEKDAYS_SHORT.map((w, i) => {
-    const closed = !b.days[i], g = !closed && uncoveredHours(b, i).length > 0;
+    const closed = !b.days[i], unc = !closed && uncoveredHours(b, i).length > 0, f = closed ? null : shiftForecast(b, i);
+    const g = unc || !!(f && f.probs.length);
     if (g) gap++;
-    return ovChip(WEEKDAYS[i], closed ? 'chiuso' : g ? 'scoperto' : 'ok', closed ? 'off' : g ? 'bad' : 'ok', 'ovDay', { b: b.id, d: i });
+    return ovChip(WEEKDAYS[i], closed ? 'chiuso' : unc ? 'scoperto' : g ? '−' + num(f.lost) + ' clienti' : 'ok', closed ? 'off' : g ? 'bad' : 'ok', 'ovDay', { b: b.id, d: i });
   }).join('');
-  out.push({ id: 'turni', ic: '🗓️', title: 'Turni', sum: gap ? `${gap} gg scoperti` : 'coperti', bad: gap > 0, chips: days, note: 'Tocca un giorno per i turni' });
+  out.push({ id: 'turni', ic: '🗓️', title: 'Turni', sum: gap ? `${gap} gg da sistemare` : 'ok', bad: gap > 0, chips: days, note: 'Tocca un giorno per i turni' });
   // persone
   const emps = empsOf(b.id).slice().sort((x, y) => (y.wdays[wdNext] - x.wdays[wdNext]) || startOn(x, wdNext) - startOn(y, wdNext));
   const nBad = emps.filter(empBad).length;

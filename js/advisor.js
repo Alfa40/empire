@@ -26,8 +26,8 @@ function adviseBiz(b) {
       const g = byLim[k]; if (g.lost < 2) continue;
       const when = hoursRanges(g.h);
       if (k === 'locale') add('y', `${when}: locale pieno (−${num(g.lost)})`, [['Migliorie', 'tab', { t: 'miglioramenti' }]], ['giornata', 'attrezzature']);
-      else if (k === 'nessuno') add('r', `${when}: nessuno in turno (−${num(g.lost)})`, [shifts], ['giornata', 'turni']);
-      else add('r', `${when}: manca ${ROLES[k].name} (−${num(g.lost)})`, [shifts, ['Assumi', 'hireOpen', { target: b.id, role: k }]], ['giornata', 'turni']);
+      else if (k === 'nessuno') add('r', `${when}: nessuno in turno (−${num(g.lost)})`, [shifts], 'giornata');
+      else add('r', `${when}: manca ${ROLES[k].name} (−${num(g.lost)})`, [shifts, ['Assumi', 'hireOpen', { target: b.id, role: k }]], 'giornata');
     }
     const idle = t.hourly.filter(x => x.n >= 2 && x.d < 1.5 && !x.lim).map(x => x.h);
     if (idle.length >= 3) add('b', `Personale inattivo: ${hoursRanges(idle)}`, [shifts], 'turni');
@@ -35,8 +35,14 @@ function adviseBiz(b) {
   if (t.closed === 'Nessun dipendente in servizio') add('r', 'Oggi chiusa: nessuno in turno', [shifts], ['giornata', 'turni']);
   if (T.mode === 'shop' && T.capMode !== 'day') {
     const gaps = [];
-    for (let d = 0; d < 7; d++) if (uncoveredHours(b, d).length) gaps.push(WEEKDAYS_SHORT[d]);
+    const need = {};
+    for (let d = 0; d < 7; d++) {
+      if (uncoveredHours(b, d).length) gaps.push(WEEKDAYS_SHORT[d]);
+      const f = shiftForecast(b, d);
+      if (f) for (const g of f.probs) if (g.lim !== 'nessuno') (need[g.lim] = need[g.lim] || []).push(WEEKDAYS_SHORT[d]);
+    }
     if (gaps.length) add('r', `Ore scoperte: ${gaps.join(' ')}`, [shifts], 'turni');
+    for (const r in need) add('r', `Pochi ${ROLES[r].name.toLowerCase()}: ${need[r].join(' ')}`, [shifts, ['Assumi', 'hireOpen', { target: b.id, role: r }]], 'turni');
   }
   // ---- scorte ----
   if (t.stockouts && t.stockouts.length) add('r', `${T.mode === 'shop' ? 'Esauriti' : 'Mancano'}: ${t.stockouts.slice(0, 3).join(', ')}${t.stockouts.length > 3 ? '…' : ''}`, [['Ordina subito', 'advOrder', { b: b.id }]], 'magazzino');

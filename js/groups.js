@@ -96,11 +96,12 @@ function finGroupData(tot) {
     return { ...g, lines, v: sum(lines, l => l.v) };
   }).filter(g => g.lines.length);
 }
-function finTiles(groups, mode) {
-  return `<div class="ovts">${groups.map(g => `<button class="ovt ${g.v >= 0 ? 'ok' : 'exp'}" data-a="finGroup" data-g="${g.id}" data-m="${mode}"><span class="ic">${g.ic}</span><b>${g.n}</b><small class="${cls(g.v)}">${eur0(g.v)}</small></button>`).join('')}</div>`;
+function finTiles(groups, mode, bizId) {
+  return `<div class="ovts">${groups.map(g => `<button class="ovt ${g.v >= 0 ? 'ok' : 'exp'}" data-a="finGroup" data-g="${g.id}" data-m="${mode}"${bizId ? ` data-b="${bizId}"` : ''}><span class="ic">${g.ic}</span><b>${g.n}</b><small class="${cls(g.v)}">${eur0(g.v)}</small></button>`).join('')}</div>`;
 }
+function finPerSeg() { return `<div class="seg mb">${FIN_PERIODS.map(([k, l]) => btn(l, 'finPer', { p: k }, 'sm ' + ((UI.fin.per || 'mese') === k ? 'on' : ''))).join('')}</div>`; }
 function finFilters() {
-  return `<div class="seg mb">${FIN_PERIODS.map(([k, l]) => btn(l, 'finPer', { p: k }, 'sm ' + ((UI.fin.per || 'mese') === k ? 'on' : ''))).join('')}</div>
+  return `${finPerSeg()}
     <div class="row mb">${select('finBiz', [['', 'Tutta l\'impresa'], ...S.biz.map(b => [b.id, b.name])], UI.fin.biz)}</div>`;
 }
 ACT.finPer = (d) => { UI.fin.per = d.p; render(); };
@@ -133,15 +134,23 @@ VIEWS.finance = () => {
     + `<div class="mt">${sec('Utile mese per mese', 'ce', trend, '', { closed: true, sum: plural(months.length, 'mese', 'mesi') })}</div>`;
 };
 
-ACT.finGroup = (d) => openModal('finGroup', { g: d.g, m: d.m });
+ACT.finGroup = (d) => openModal('finGroup', { g: d.g, m: d.m, b: d.b || '' });
 MODALS.finGroup = (M) => {
   const g = FIN_GROUPS.find(x => x.id === M.g); if (!g) return '';
-  const keys = finKeys(), bizId = UI.fin.biz || null;
+  const keys = finKeys(), bizId = M.b || UI.fin.biz || null;
   const tot = finTotals(keys, bizId, M.m);
   const lines = g.cats.filter(c => tot[c]).map(c => ({ c, v: tot[c] })).sort((a, c) => Math.abs(c.v) - Math.abs(a.v));
   const all = sum(lines, l => l.v);
   const max = Math.max(1, ...lines.map(l => Math.abs(l.v)));
-  const voce = lines.map(l => `<div class="kvl"><span>${esc(CATS[l.c].n)}</span><b class="${cls(l.v)}">${eur0(l.v)}</b><span class="fbar">${bar(Math.abs(l.v), max, l.v >= 0 ? 'g' : 'y')}</span></div>`).join('') || '<p class="muted">—</p>';
+  const voce = lines.map(l => `<button class="kvl tap" data-a="sub" data-x="finCat" data-c="${l.c}" data-b="${bizId || ''}" data-k="${keys.join(',')}"><span>${esc(CATS[l.c].n)}</span><b class="${cls(l.v)}">${eur0(l.v)} <i>›</i></b><span class="fbar">${bar(Math.abs(l.v), max, l.v >= 0 ? 'g' : 'y')}</span></button>`).join('') || '<p class="muted">—</p>';
+  // spese per dipendenti: totale per persona (stipendio + contributi)
+  let pers = '';
+  if (g.id === 'personale') {
+    const pp = {};
+    for (const c of ['stipendi', 'contributi']) for (const r of finDetail(keys, c, bizId)) { const n = r.w.replace(/ \(.*\)$/, ''); if (n) pp[n] = (pp[n] || 0) + r.v; }
+    const L = Object.entries(pp).sort((a, c) => a[1] - c[1]);
+    if (L.length) pers = `<h4>Per persona <small class="muted">stipendio + contributi</small></h4>${L.map(([n, v]) => `<div class="kvl"><span>${esc(n)}</span><b class="${cls(v)}">${eur0(v)}</b></div>`).join('')}`;
+  }
   // divisione per attività
   let per = '';
   if (!bizId && S.biz.length) {
@@ -151,5 +160,56 @@ MODALS.finGroup = (M) => {
   }
   const per_l = (FIN_PERIODS.find(p => p[0] === (UI.fin.per || 'mese')) || FIN_PERIODS[0])[1];
   return sheet(`${g.ic} ${g.n}`, `<small class="muted">${per_l}${bizId && getBiz(bizId) ? ' · ' + esc(getBiz(bizId).name) : ''}</small>
-    <div class="kpis">${kpi('Totale', eur0(all), '', cls(all))}</div><h4>Voci</h4>${voce}${per}`, '', { help: M.m === 'cash' ? 'flussi' : 'ce' });
+    <div class="kpis">${kpi('Totale', eur0(all), '', cls(all))}</div><h4>Voci <small class="muted">tocca per il dettaglio</small></h4>${voce}${pers}${per}`, '', { help: M.m === 'cash' ? 'flussi' : 'ce' });
+};
+
+// ---------- dettaglio di una voce: ogni singola spesa o entrata ----------
+/** righe del registro dettagliato: [{bz, w, v}] sommate sui mesi */
+function finDetail(keys, cat, bizId) {
+  const acc = {};
+  for (const k of keys) {
+    const dc = ((S.det || {})[k] || {})[cat]; if (!dc) continue;
+    for (const key in dc) {
+      const i = key.indexOf('|'), bz = key.slice(0, i), w = key.slice(i + 1);
+      if (bizId && bz !== bizId) continue;
+      const rk = bz + '|' + w;
+      acc[rk] = (acc[rk] || 0) + dc[key];
+    }
+  }
+  return Object.entries(acc).map(([rk, v]) => { const i = rk.indexOf('|'); return { bz: rk.slice(0, i), w: rk.slice(i + 1), v }; }).filter(r => Math.abs(r.v) >= 0.5);
+}
+ACT.finCat = (d) => openModal('finCat', { c: d.c, b: d.b || '', k: d.k });
+MODALS.finCat = (M) => {
+  const C = CATS[M.c]; if (!C) return '';
+  const keys = String(M.k).split(',').filter(Boolean), bizId = M.b || null;
+  const total = finTotals(keys, bizId, 'all')[M.c] || 0;
+  const rows = finDetail(keys, M.c, bizId).sort((a, c) => Math.abs(c.v) - Math.abs(a.v));
+  const rest = total - sum(rows, r => r.v);
+  if (Math.abs(rest) >= 1) rows.push({ bz: '', w: '', v: rest, old: true });
+  const max = Math.max(1, ...rows.map(r => Math.abs(r.v)));
+  const many = !bizId && S.biz.length > 0;
+  const where = r => { if (!many || r.old) return ''; const b = getBiz(r.bz); return '<small class="muted">' + (b ? bizType(b).icon + ' ' + esc(b.name) : r.bz ? 'attività chiusa' : '🏢 Sede') + '</small>'; };
+  const list = rows.map(r => '<div class="kvl"><span class="kvn">' + (r.old ? '<i>Movimenti senza dettaglio</i>' : esc(r.w || 'Varie')) + where(r) + '</span><b class="' + cls(r.v) + '">' + eur2(r.v) + '</b><span class="fbar">' + bar(Math.abs(r.v), max, r.v >= 0 ? 'g' : 'y') + '</span></div>').join('') || '<p class="muted">Nessun movimento.</p>';
+  const per = keys.length === 1 && keys[0] !== String(monthKey(S.day)) ? monthLabel(keys[0]) : (FIN_PERIODS.find(p => p[0] === (UI.fin.per || 'mese')) || FIN_PERIODS[0])[1];
+  const n = rows.filter(r => !r.old).length;
+  return sheet(esc(C.n), '<small class="muted">' + per + (bizId && getBiz(bizId) ? ' · ' + esc(getBiz(bizId).name) : '') + '</small>'
+    + '<div class="kpis">' + kpi('Totale', eur0(total), plural(n, 'voce', 'voci'), cls(total)) + '</div>' + list, '', { help: 'ce' });
+};
+
+// ---------- Conti di un'attività: stessi gruppi della Finanza ----------
+BIZ_TABS.statistiche = (b) => {
+  const keys = finKeys();
+  const tot = finTotals(keys, b.id, 'pl');
+  const pl = plOf(tot);
+  const groups = finGroupData(tot);
+  const inc = groups.filter(g => g.v >= 0), exp = groups.filter(g => g.v < 0).sort((a, c) => a.v - c.v);
+  const months = lastMonthKeys(6).reverse().filter(k => k >= monthKey(b.created));
+  const trend = months.map(k => { const p = monthPL(k, b.id); return '<div class="kvl"><span>' + monthLabel(k).slice(0, 3) + ' ' + String(k).slice(2, 4) + '</span><b class="' + cls(p.profit) + '">' + eur0(p.profit) + '</b></div>'; }).join('');
+  return finPerSeg()
+    + '<div class="ovcs ovg">' + ovChip('⬆️ Ricavi', eur0(pl.rev), 'ok', 'help', { k: 'ce' }) + ovChip('⬇️ Costi', eur0(pl.cost), 'ok', 'help', { k: 'ce' }) + ovChip('= Utile', '<span class="' + cls(pl.profit) + '">' + eur0(pl.profit) + '</span>', pl.profit < 0 ? 'bad' : 'ok', 'help', { k: 'utile' }) + '</div>'
+    + (inc.length ? '<h4>Entrate</h4>' + finTiles(inc, 'pl', b.id) : '')
+    + (exp.length ? '<h4>Spese</h4>' + finTiles(exp, 'pl', b.id) : '')
+    + (!groups.length ? '<p class="muted">Nessun movimento nel periodo.</p>' : '')
+    + '<div class="mt">' + sec('Utile mese per mese', 'ce', trend, '', { closed: true, sum: plural(months.length, 'mese', 'mesi') }) + '</div>'
+    + sec('30 giorni', null, histTable(b, 30), '', { closed: true, c: 'green' });
 };

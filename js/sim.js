@@ -222,7 +222,7 @@ function simShop(b, info, mods, staffToday) {
     ratio[r] = needRole[r] > 0 ? clamp(avail / needRole[r], 0, 1) : 1;
   }
   // vendite con limiti di magazzino
-  let grossByIva = {}, unitsWanted = 0, unitsSold = 0, valueScore = 0, valueW = 0, qualSold = 0;
+  const sales = []; let unitsWanted = 0, unitsSold = 0, valueScore = 0, valueW = 0, qualSold = 0;
   const use = {}, stockouts = [];
   const order = active.slice().sort((a, c) => demand[c.id] - demand[a.id]);
   for (const p of order) {
@@ -240,7 +240,7 @@ function simShop(b, info, mods, staffToday) {
     const price = effPrice(b, p, info);
     const t = tplOf(b, p);
     const iva = t.iva != null ? t.iva : T.iva;
-    grossByIva[iva] = (grossByIva[iva] || 0) + price * sell;
+    sales.push({ n: p.name, g: price * sell, iva });
     unitsSold += sell;
     const r = refPrice(b, p) / price;
     valueScore += clamp(r - 1, -1, 0.6) * sell; valueW += sell;
@@ -248,9 +248,9 @@ function simShop(b, info, mods, staffToday) {
     R.items[p.id] = (R.items[p.id] || 0) + sell;
   }
   let gross = 0;
-  for (const iva in grossByIva) { const g = grossByIva[iva]; gross += g; R.revNet += income(g, +iva, 'vendite', b.id); }
+  for (const x of sales) { gross += x.g; R.revNet += income(x.g, x.iva, 'vendite', b.id, x.n); }
   R.gross = gross;
-  if (mods.commission && gross > 0) expense(gross * mods.commission / 1.22, 0.22, 'commissioni', b.id);
+  if (mods.commission && gross > 0) expense(gross * mods.commission / 1.22, 0.22, 'commissioni', b.id, 'Commissioni sugli incassi');
   R.use = use; R.stockouts = stockouts;
   S.counters.sold += unitsSold;
 
@@ -349,7 +349,7 @@ function simProduction(b, info, mods, staffToday) {
     if (sell > 0) {
       takeStock(b, b.output, sell);
       const iva = MATERIALS[b.output].iva;
-      R.revNet += income(sell * price * (1 + iva), iva, 'ingrosso', b.id);
+      R.revNet += income(sell * price * (1 + iva), iva, 'ingrosso', b.id, MATERIALS[b.output].name);
       R.wsSold = sell; R.wsPrice = price;
     }
     R.wsDemand = dem;
@@ -460,9 +460,9 @@ function simulateDay() {
     // costi
     if (b.status !== 'setup' || Object.keys(b.equip).length) {
       const en = dailyEnergy(b, mods, open);
-      if (en > 0) expense(en, 0.22, 'utenze', b.id);
+      if (en > 0) expense(en, 0.22, 'utenze', b.id, 'Luce, gas e acqua');
     }
-    if (b.mkBudget > 0 && b.status === 'open') expense(b.mkBudget, 0.22, 'marketing', b.id);
+    if (b.mkBudget > 0 && b.status === 'open') expense(b.mkBudget, 0.22, 'marketing', b.id, 'Pubblicità giornaliera');
     // scadenze magazzino
     const waste = expireStock(b, mods);
     b.today.waste = waste;
@@ -492,7 +492,7 @@ function simulateDay() {
   if (t.d === 16) midMonth(info);
   if (t.m === 11 && t.d === 20) tredicesima();
   for (const d of S.tax.due.slice()) if (d.due <= S.day) {
-    cashMove(-d.amount, 'versamento_imposte');
+    cashMove(-d.amount, 'versamento_imposte', null, d.label);
     log(`Pagate ${d.label}: ${eur(d.amount)}.`, 'info');
     S.tax.due = S.tax.due.filter(x => x !== d);
   }
@@ -580,7 +580,7 @@ function startResearch(id) {
   if (R.req && R.req.some(r => !hasResearch(r))) return { err: 'Requisiti mancanti.' };
   const cost = Math.round(R.cost * S.eco.priceLevel * (1 - 0.05 * Math.min(5, hqCount('ricercatore'))));
   if (S.cash < cost) return { err: 'Liquidità insufficiente.' };
-  cashMove(-cost, 'ricerca');
+  cashMove(-cost, 'ricerca', null, R.n);
   S.research.active = { id, progress: 0, days: R.days, started: S.day };
   return { ok: true };
 }
@@ -668,18 +668,18 @@ function monthStart(info) {
     e.monthExtra = 0;
     if (gross <= 0) continue;
     const bz = e.biz === 'hq' ? null : e.biz;
-    cashMove(-gross, 'stipendi', bz);
-    cashMove(-gross * 0.3, 'contributi', bz);
+    cashMove(-gross, 'stipendi', bz, empLbl(e));
+    cashMove(-gross * 0.3, 'contributi', bz, empLbl(e));
     const tfr = gross / 13.5;
     e.tfr = (e.tfr || 0) + tfr;
-    bookOnly('contributi', -tfr, bz);
+    bookOnly('contributi', -tfr, bz, empLbl(e) + ' (TFR)');
   }
   // affitti, canoni, assicurazioni
   for (const b of S.biz) {
     const mods = bizMods(b);
-    if (b.rent > 0 && b.paidRentMonth !== monthKey(S.day)) { expense(b.rent, 0, 'affitto', b.id); b.paidRentMonth = monthKey(S.day); }
-    if (mods.monthly > 0) expense(mods.monthly * S.eco.priceLevel, 0.22, 'manutenzione', b.id);
-    if (b.insurance) cashMove(-insurancePremium(b), 'assicurazioni', b.id);
+    if (b.rent > 0 && b.paidRentMonth !== monthKey(S.day)) { expense(b.rent, 0, 'affitto', b.id, 'Affitto del locale'); b.paidRentMonth = monthKey(S.day); }
+    if (mods.monthly > 0) expense(mods.monthly * S.eco.priceLevel, 0.22, 'manutenzione', b.id, 'Canoni mensili');
+    if (b.insurance) cashMove(-insurancePremium(b), 'assicurazioni', b.id, 'Polizza attività');
   }
   // commercialista
   const nb = S.biz.length;
@@ -687,10 +687,11 @@ function monthStart(info) {
     let fee = (110 + 55 * nb) * S.eco.priceLevel;
     const covered = Math.min(nb, hqCount('contabile') * 12);
     fee *= 1 - 0.75 * covered / nb;
-    expense(fee, 0.22, 'consulenze');
+    expense(fee, 0.22, 'consulenze', null, 'Commercialista');
   }
-  if (S.overdraft.limit > 0) cashMove(-S.overdraft.limit * 0.005 / 12, 'commissioni');
+  if (S.overdraft.limit > 0) cashMove(-S.overdraft.limit * 0.005 / 12, 'commissioni', null, 'Fido bancario');
   monthlyDepreciation();
+  pruneDetail();
   // IVA del mese precedente
   if (hasIva()) {
     let due = S.tax.ivaDebit - S.tax.ivaCredit - S.tax.ivaCarry;
@@ -718,14 +719,14 @@ function insurancePremium(b) { return Math.round((35 + b.m2 * 0.35 + sum(Object.
 function midMonth(info) {
   const t = ymd(S.day);
   if (S.tax.ivaDue > 0) {
-    cashMove(-S.tax.ivaDue, 'iva');
+    cashMove(-S.tax.ivaDue, 'iva', null, 'IVA del mese precedente');
     log(`Versata l'IVA del mese precedente: ${eur(S.tax.ivaDue)}.`, 'info');
     S.tax.ivaDue = 0;
   }
   if (t.m === 5 || t.m === 11) {
     let imu = 0;
     for (const p of S.props) imu += p.value * 0.0062 / 2;
-    if (imu > 0) { cashMove(-imu, 'imposte_varie'); log(`Pagata la rata IMU sugli immobili: ${eur(imu)}.`, 'info'); }
+    if (imu > 0) { cashMove(-imu, 'imposte_varie', null, 'IMU immobili'); log(`Pagata la rata IMU sugli immobili: ${eur(imu)}.`, 'info'); }
   }
   void info;
 }
@@ -737,7 +738,7 @@ function tredicesima() {
     const g = empMonthlyCost(e) * Math.min(1, e.wdays.filter(Boolean).length * e.hours / 40) * months / 12;
     if (g <= 0) continue;
     const bz = e.biz === 'hq' ? null : e.biz;
-    cashMove(-g, 'stipendi', bz); cashMove(-g * 0.3, 'contributi', bz);
+    cashMove(-g, 'stipendi', bz, empLbl(e) + ' (13ª)'); cashMove(-g * 0.3, 'contributi', bz, empLbl(e) + ' (13ª)');
     tot += g * 1.3;
   }
   if (tot > 0) log(`Pagata la tredicesima ai dipendenti: ${eur(tot)} (contributi inclusi).`, 'info');

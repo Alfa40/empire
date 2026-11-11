@@ -81,3 +81,26 @@ nav.side .side-h { font-size: .7rem; text-transform: uppercase; letter-spacing: 
 .ovt small.neg, .ovt small.pos { font-weight: 800; }
 .kvl .fbar { flex-basis: 100%; display: block; }
 .kvl .fbar .bar { width: 100%; }
+
+/* selezione = blu (il rosso resta solo per problemi e numeri negativi) */
+:root { --sel: #2f6fc4; --sel-bg: #e3eeff; --sel-ink: #ffffff; }
+:root[data-theme="dark"] { --sel: #8ec0ff; --sel-bg: #243858; --sel-ink: #0f1a2c; }
+.btn.on, .menu-grid button.on, .rail-item.on { background: var(--sel-bg); border-color: var(--sel); color: var(--text); }
+nav.side button.on { background: var(--sel-bg); border-color: var(--sel); box-shadow: 0 3px 0 color-mix(in srgb, var(--sel) 35%, transparent); }
+nav.bottom button.on { color: var(--sel); }
+nav.bottom button.on .ic { background: var(--sel-bg); color: var(--sel); }
+.card.on { border-color: var(--sel); background: var(--sel-bg); box-shadow: 0 4px 0 color-mix(in srgb, var(--sel) 50%, transparent), inset 0 0 0 1px var(--sel); }
+.days button.on { background: var(--sel); border-color: var(--sel); color: var(--sel-ink); box-shadow: 0 2px 0 color-mix(in srgb, var(--sel) 60%, #000); }
+.btn.on.bad { background: var(--red-bg); border-color: var(--red); }
+/* righe che si toccano per il dettaglio */
+button.kvl { width: 100%; background: none; border: 0; border-bottom: 2px dashed var(--line); font: inherit; color: inherit; text-align: left; cursor: pointer; }
+button.kvl:last-of-type { border-bottom: 0; }
+button.kvl b i { font-style: normal; color: var(--muted); margin-left: .2rem; }
+button.kvl:hover { background: var(--panel2); }
+.kvl .kvn { flex-direction: column; align-items: flex-start; gap: 0; min-width: 0; color: var(--text); }
+.kvl .kvn small { font-weight: 600; }
+
+/* previsione turni */
+.fc { margin-top: .7rem; padding: .6rem .8rem; border-radius: 14px; border: 2px solid var(--green); background: var(--green-bg); display: grid; gap: .3rem; }
+.fc.bad { border-color: var(--red); background: var(--red-bg); }
+.fc .kvl { border-bottom-color: color-mix(in srgb, var(--red) 30%, transparent); }

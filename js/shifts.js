@@ -199,3 +199,40 @@ function hoursRanges(list) {
   }
   return r.join(', ');
 }
+
+// ===================== Previsione per giorno della settimana =====================
+// Stessa simulazione ora per ora della giornata vera, ma con i clienti attesi
+// e le persone in turno quel giorno: dice in anticipo dove mancherà personale.
+const _fcCache = new Map();
+/** prossima data (da domani) che cade in quel giorno della settimana */
+function nextDateOf(wd) { for (let k = 1; k <= 7; k++) if (ymd(S.day + k).wd === wd) return S.day + k; return S.day + 1; }
+function shiftForecast(b, wd) {
+  const T = bizType(b);
+  if (T.mode !== 'shop' || T.capMode === 'day' || !b.days[wd] || b.status === 'setup') return null;
+  const day = nextDateOf(wd);
+  const emps = empsOf(b.id);
+  const away = e => e.sickUntil > day || e.holidayUntil > day || e.trainUntil > day;
+  const sig = [S.day, b.id, wd, b.hours.join('-'), b.products.map(p => p.on ? p.id + p.price : '').join(''), Object.keys(b.equip).map(k => k + b.equip[k].tier + (b.equip[k].broken ? 'x' : '')).join(''),
+    emps.map(e => e.id + e.role + (e.wdays[wd] ? startOn(e, wd) + ':' + e.hours : '-') + (away(e) ? 'a' : '') + Math.round(e.skill / 5)).join(',')].join('|');
+  if (_fcCache.has(sig)) return _fcCache.get(sig);
+  const info = dayInfo(day), mods = bizMods(b);
+  const active = b.products.filter(p => p.on);
+  const staff = emps.filter(e => e.wdays[wd] && !away(e));
+  const dem = computeDemand(b, info, mods, b.lastQ || 55, true);
+  const hr = simHours(b, T, info, mods, staff, active, dem.wanted);
+  // problemi di personale (il "locale pieno" non si risolve con i turni)
+  const byLim = {};
+  for (const x of hr.hours) if (x.lim && x.lim !== 'locale' && x.d - x.s >= 0.3) { const g = byLim[x.lim] || (byLim[x.lim] = { lim: x.lim, h: [], lost: 0 }); g.h.push(x.h); g.lost += x.d - x.s; }
+  const probs = Object.values(byLim).filter(g => g.lost >= 1.5).sort((a, c) => c.lost - a.lost);
+  const res = { day, hours: hr.hours, wanted: hr.wanted, served: hr.served, probs, lost: sum(probs, g => g.lost) };
+  if (_fcCache.size > 300) _fcCache.clear();
+  _fcCache.set(sig, res);
+  return res;
+}
+/** giorno con problemi di personale: ore scoperte o clienti persi previsti */
+function dayBad(b, wd) {
+  if (uncoveredHours(b, wd).length) return true;
+  const f = shiftForecast(b, wd);
+  return !!(f && f.probs.length);
+}
+function probText(g) { return g.lim === 'nessuno' ? 'nessuno in turno' : 'serve un altro ' + ROLES[g.lim].name; }

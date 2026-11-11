@@ -62,13 +62,13 @@ function openBusiness(o) {
     b.wholesale = { on: true, price: null, reserve: 0 };
   }
   if (prop) prop.biz = b.id;
-  expense(T.license, 0, 'licenze', b.id);
+  expense(T.license, 0, 'licenze', b.id, 'Licenze di apertura');
   if (!prop) {
-    cashMove(-L.deposit, 'cauzioni', b.id);
-    expense(L.rent, 0.22, 'affitto', b.id);
-    expense(L.agency, 0.22, 'consulenze', b.id);
+    cashMove(-L.deposit, 'cauzioni', b.id, 'Deposito cauzionale');
+    expense(L.rent, 0.22, 'affitto', b.id, 'Primo affitto');
+    expense(L.agency, 0.22, 'consulenze', b.id, 'Agenzia immobiliare');
   }
-  if (cost.renov) { expense(cost.renov, 0.10, 'investimenti', b.id); addAsset(cost.renov, 8, 'Lavori di sistemazione', b.id); }
+  if (cost.renov) { expense(cost.renov, 0.10, 'investimenti', b.id, 'Lavori di sistemazione'); addAsset(cost.renov, 8, 'Lavori di sistemazione', b.id); }
   b.paidRentMonth = monthKey(S.day);
   S.biz.push(b);
   log(`Hai aperto "${b.name}" (${T.name}) a ${CITY[b.city].name}, ${DISTRICT[b.district].name}.`, 'good', b.id);
@@ -105,8 +105,8 @@ function buyEquipment(b, cat, tier, leasing) {
   if (cur) {
     const bookV = removeAsset(cur.asset);
     resale = Math.round(cost / TIER_COST[tier] * TIER_COST[cur.tier] * 0.25 * (cur.cond / 100));
-    if (resale > 0) income(resale * 1.22, 0.22, 'altri_ricavi', b.id);
-    if (bookV > 0) bookOnly('minusvalenze', -bookV, b.id);
+    if (resale > 0) income(resale * 1.22, 0.22, 'altri_ricavi', b.id, 'Usato ' + def.n);
+    if (bookV > 0) bookOnly('minusvalenze', -bookV, b.id, 'Sostituzione ' + def.n);
   }
   let assetId;
   if (leasing) {
@@ -114,7 +114,7 @@ function buyEquipment(b, cat, tier, leasing) {
     S.tax.ivaCredit += hasIva() ? cost * 0.22 : 0;
     assetId = addAsset(cost, 6, def.n, b.id);
   } else {
-    expense(cost, 0.22, 'investimenti', b.id);
+    expense(cost, 0.22, 'investimenti', b.id, def.n);
     assetId = addAsset(hasIva() ? cost : cost * 1.22, 6, def.n, b.id);
   }
   b.equip[cat] = { tier, cond: 100, bought: S.day, asset: assetId, broken: false };
@@ -126,7 +126,7 @@ function repairEquipment(b, cat) {
   const def = equipDef(b, cat);
   const cost = Math.round(equipCost(def, e.tier) * (e.broken ? 0.18 : 0.1) * (1 - e.cond / 150));
   if (S.cash < cost) return { err: 'Liquidità insufficiente.' };
-  expense(cost, 0.22, 'manutenzione', b.id);
+  expense(cost, 0.22, 'manutenzione', b.id, 'Riparazione ' + def.n);
   e.broken = false; e.cond = Math.min(100, Math.max(e.cond, 85));
   return { ok: true, cost };
 }
@@ -161,7 +161,7 @@ function buyUpgrade(b, uId) {
   if (b.upg[uId]) return { err: 'Già installato.' };
   const cost = upgradeCost(b, u);
   if (S.cash < cost * 1.22) return { err: 'Liquidità insufficiente.' };
-  if (cost > 0) { expense(cost, 0.22, 'investimenti', b.id); addAsset(hasIva() ? cost : cost * 1.22, uId === 'ristrutturazione' || uId === 'ampliamento' ? 10 : 5, u.n, b.id); }
+  if (cost > 0) { expense(cost, 0.22, 'investimenti', b.id, u.n); addAsset(hasIva() ? cost : cost * 1.22, uId === 'ristrutturazione' || uId === 'ampliamento' ? 10 : 5, u.n, b.id); }
   b.upg[uId] = S.day;
   if (u.fx.size) {
     b.m2 = Math.round(b.m2 * u.fx.size);
@@ -286,7 +286,7 @@ function placeOrder(b, mat, supId, qty, auto) {
     const t = takeStock(src, mat, qty);
     const value = round2(s.unit * qty);
     // ricavo per il produttore, costo per l'acquirente (nessuna IVA tra attività della stessa impresa)
-    bookOnly('interni', value, src.id); bookOnly('materiali', -value, b.id);
+    bookOnly('interni', value, src.id, MATERIALS[mat].name + ' → ' + b.name); bookOnly('materiali', -value, b.id, MATERIALS[mat].name + ' (da ' + src.name + ')');
     src.today && (src.today.internal = (src.today.internal || 0) + value);
     S.orders.push({ id: uid('o'), biz: b.id, mat, qty, q: t.quality, unit: s.unit, arrive: S.day + s.days, sup: s.name, internal: src.id, auto: !!auto });
     unlockAch('filiera');
@@ -296,7 +296,7 @@ function placeOrder(b, mat, supId, qty, auto) {
   const unit = materialPrice(mat, sup);
   const total = unit * qty;
   if (!auto && S.cash < total * 1.22) return { err: 'Liquidità insufficiente.' };
-  const paid = expense(total, MATERIALS[mat].iva, 'materiali', b.id);
+  const paid = expense(total, MATERIALS[mat].iva, 'materiali', b.id, MATERIALS[mat].name);
   let days = sup.days;
   const rel = hasResearch('logistica_r') ? Math.min(0.995, sup.rel + 0.03) : sup.rel;
   let late = false;
@@ -412,10 +412,11 @@ function fireEmployee(e, reason) {
   const notice = e.contract === 'indeterminato' ? e.wage : e.contract === 'apprendistato' ? e.wage * 0.5 : 0;
   const tfr = e.tfr || 0;
   const prorata = proRataSalary(e);
-  cashMove(-prorata, 'stipendi', e.biz === 'hq' ? null : e.biz);
-  cashMove(-prorata * 0.3, 'contributi', e.biz === 'hq' ? null : e.biz);
-  if (notice) { cashMove(-notice, 'stipendi', e.biz === 'hq' ? null : e.biz); cashMove(-notice * 0.3, 'contributi', e.biz === 'hq' ? null : e.biz); }
-  if (tfr) cashMove(-tfr, 'tfr_pagato');
+  const fbz = e.biz === 'hq' ? null : e.biz, fl = empLbl(e);
+  cashMove(-prorata, 'stipendi', fbz, fl);
+  cashMove(-prorata * 0.3, 'contributi', fbz, fl);
+  if (notice) { cashMove(-notice, 'stipendi', fbz, fl + ' (preavviso)'); cashMove(-notice * 0.3, 'contributi', fbz, fl + ' (preavviso)'); }
+  if (tfr) cashMove(-tfr, 'tfr_pagato', null, fl);
   for (const o of Object.values(S.emps)) if (o.biz === e.biz && o.id !== e.id) o.morale = clamp(o.morale - (reason === 'licenziato' ? 4 : 1), 0, 100);
   delete S.emps[e.id];
   return { cost: prorata * 1.3 + notice * 1.3 + tfr };
@@ -452,7 +453,7 @@ function startTraining(e, courseId) {
   if (c.min && e.skill < c.min) return { err: `Serve una competenza di almeno ${c.min}.` };
   if (e.skill >= c.max) return { err: 'Competenza già oltre il livello del corso.' };
   if (e.trainUntil > S.day) return { err: 'Già in formazione.' };
-  expense(cost, 0.22, 'formazione', e.biz === 'hq' ? null : e.biz);
+  expense(cost, 0.22, 'formazione', e.biz === 'hq' ? null : e.biz, c.n + ' · ' + e.first + ' ' + e.last);
   e.trainUntil = S.day + c.days;
   e.trainGain = c.skill * (hasResearch('formazione') ? 1.3 : 1);
   e.trainMorale = c.morale || 4;

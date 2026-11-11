@@ -59,7 +59,7 @@ const EVENT_RESOLVE = {
   },
   recensione_neg(ev, i) {
     const b = getBiz(ev.biz); if (!b) return '';
-    if (i === 0) { expense(150, 0, 'marketing', b.id); b.rep = clamp(b.rep - 1, 0, 100); return 'Il cliente ha apprezzato la risposta.'; }
+    if (i === 0) { expense(150, 0, 'marketing', b.id, 'Risposta a un cliente'); b.rep = clamp(b.rep - 1, 0, 100); return 'Il cliente ha apprezzato la risposta.'; }
     b.rep = clamp(b.rep - 4, 0, 100); b.aw = clamp(b.aw - 3, 0, 100); return 'La recensione ha fatto il giro del web (reputazione -4).';
   },
   danni(ev, i) {
@@ -67,7 +67,7 @@ const EVENT_RESOLVE = {
     const cost = i === 0 ? ev.cost : ev.cost * 0.6;
     const days = i === 0 ? ev.days : ev.days * 2 + 2;
     const covered = b.insurance ? cost * 0.85 : 0;
-    expense(cost - covered, 0.22, 'manutenzione', b.id);
+    expense(cost - covered, 0.22, 'manutenzione', b.id, 'Danni al locale');
     b.closedUntil = S.day + days; b.closedReason = 'Chiusa per lavori dopo i danni';
     return `${b.insurance ? 'L\'assicurazione copre l\'85%. ' : ''}Costo a tuo carico ${eur((cost - covered) * 1.22)}, chiusura per ${days} giorni.`;
   },
@@ -79,14 +79,14 @@ const EVENT_RESOLVE = {
     maxU = Math.floor(maxU);
     for (const m in p.r) takeStock(b, m, p.r[m] * maxU);
     const T = bizType(b); const t = tplOf(b, p);
-    income(maxU * ev.price, t.iva != null ? t.iva : T.iva, 'vendite', b.id);
+    income(maxU * ev.price, t.iva != null ? t.iva : T.iva, 'vendite', b.id, 'Ordine speciale');
     if (maxU < ev.qty) { b.rep = clamp(b.rep - 3, 0, 100); return `Hai consegnato solo ${maxU} pezzi su ${ev.qty} per mancanza di scorte: il cliente è insoddisfatto.`; }
     b.rep = clamp(b.rep + 2, 0, 100); b.aw = clamp(b.aw + 3, 0, 100);
     return `Consegnati ${maxU} pezzi: incasso ${eur(maxU * ev.price)}.`;
   },
   influencer(ev, i) {
     const b = getBiz(ev.biz); if (!b || i !== 0) return '';
-    expense(ev.cost, 0.22, 'marketing', b.id);
+    expense(ev.cost, 0.22, 'marketing', b.id, 'Influencer');
     if (chance(0.6)) { b.aw = clamp(b.aw + 18, 0, 100); return 'Il post è stato un successo: notorietà +18!'; }
     return 'Il post è passato inosservato.';
   },
@@ -152,13 +152,13 @@ const EVENT_RESOLVE = {
   },
   sponsor(ev, i) {
     if (i !== 0) return '';
-    cashMove(-ev.cost, 'marketing');
+    cashMove(-ev.cost, 'marketing', null, 'Sponsorizzazione squadra');
     for (const b of S.biz.filter(x => x.city === ev.city)) b.aw = clamp(b.aw + 8, 0, 100);
     return 'Il tuo nome è sulle maglie della squadra: notorietà +8 in città.';
   },
   lite(ev, i) {
     const list = empsOf(ev.biz);
-    if (i === 0) { expense(300, 0.10, 'formazione', ev.biz); list.forEach(e => e.morale = clamp(e.morale + 8, 0, 100)); return 'Il clima in squadra è migliorato (+8 morale).'; }
+    if (i === 0) { expense(300, 0.10, 'formazione', ev.biz, 'Incontro di squadra'); list.forEach(e => e.morale = clamp(e.morale + 8, 0, 100)); return 'Il clima in squadra è migliorato (+8 morale).'; }
     list.forEach(e => e.morale = clamp(e.morale - 6, 0, 100)); return 'La tensione resta (-6 morale).';
   },
   acquisizione_concorrente(ev, i) {
@@ -544,11 +544,11 @@ function propertiesMonth(t) {
   for (const p of S.props) {
     p.value = Math.round(p.bought * S.market.index[p.city] / (p.idx0 || 1));
     if (p.renovated) p.value = Math.round(p.value * 1.12);
-    cashMove(-p.value * 0.0008, 'manutenzione', p.biz || null);
+    cashMove(-p.value * 0.0008, 'manutenzione', p.biz || null, 'Immobile a ' + CITY[p.city].name);
     if (p.biz) continue;
     if (p.tenant) {
       if (p.tenant.arrears > 0 && chance(0.5)) { p.tenant.arrears--; continue; }
-      cashMove(p.tenant.rent, 'affitti_attivi');
+      cashMove(p.tenant.rent, 'affitti_attivi', null, 'Immobile a ' + CITY[p.city].name + ' (' + p.m2 + ' m²)');
       if (chance(0.012)) queueEvent({ type: 'inquilino_moroso', prop: p.id, title: 'Inquilino moroso', text: `L'inquilino del tuo immobile a ${CITY[p.city].name} (${p.m2} m²) non paga l'affitto di ${eur(p.tenant.rent)}.`, opts: ['Avvia lo sfratto (2.000 €)', 'Concedi una dilazione'], important: true });
       else if (chance(0.02)) { log(`L'inquilino ha lasciato il tuo immobile a ${CITY[p.city].name}.`, 'info'); p.tenant = null; }
     } else if (p.rentOut && (!p.vacantUntil || p.vacantUntil <= S.day)) {
@@ -605,7 +605,7 @@ function stockMarketDay(info) {
       const h = S.holdings[s.tk];
       if (h && h.qty > 0 && d.div > 0) {
         const gross = h.qty * s.price * d.div / 4;
-        cashMove(gross * 0.74, 'dividendi');
+        cashMove(gross * 0.74, 'dividendi', null, d.n);
         log(`Dividendo ${d.n}: ${eur(gross * 0.74)} netti (ritenuta 26%).`, 'good');
       }
     }

@@ -28,9 +28,9 @@ const HELP = {
   reputazione: ['Reputazione', ['Da 1 a 5 stelle.', 'Cresce se i clienti sono soddisfatti.', 'Soddisfazione: qualità, prezzo giusto, attese brevi, pulizia, prodotti disponibili.']],
   notorieta: ['Notorietà', ['Quanta gente ti conosce (0-100).', 'Sale con pubblicità, campagne, marchio e buona reputazione.', 'Scende lentamente nel tempo.']],
   qualita: ['Qualità', ['Da 0 a 100.', 'Materie prime (fornitore), bravura del personale, attrezzature, miglioramenti, ricerca.']],
-  giornata: ['Giornata ora per ora', ['Clienti arrivati e serviti per ogni ora.', 'Barra verde = serviti, rossa = persi.', 'Persi per: personale insufficiente, nessuno in turno o locale pieno.']],
-  turni: ['Turni', ['Ogni dipendente ha giorni, ora d\'inizio e ore al giorno.', 'Tocca una casella: il turno di quel giorno inizia a quell\'ora.', 'Inizio −/+ sposta il turno di tutti i giorni.', 'Riga Copertura: persone presenti; rosso = ora scoperta.', 'Ottimizza: il consulente distribuisce i turni sulle ore di punta.']],
-  copertura: ['Copertura', ['Persone in turno (escluse pulizie) per ogni ora.', 'Ogni ora di apertura deve avere qualcuno.', 'Nelle ore di punta ne servono di più.']],
+  giornata: ['Giornata ora per ora', ['Clienti arrivati e serviti per ogni ora.', 'Barra verde = serviti, rossa = persi.', 'Persi per: personale insufficiente, nessuno in turno o locale pieno.', 'Prossimi giorni: previsione; tocca un giorno per sistemarne i turni.']],
+  turni: ['Turni', ['Ogni dipendente ha giorni, ora d\'inizio e ore al giorno.', 'Tocca una casella: il turno di quel giorno inizia a quell\'ora.', 'Inizio −/+ sposta il turno di tutti i giorni.', 'Riga Copertura: persone presenti; rosso = personale insufficiente (previsione).', 'Sotto la tabella: la previsione del giorno, con ore e ruolo che mancano.', 'Ottimizza: il consulente distribuisce i turni sulle ore di punta.']],
+  copertura: ['Copertura', ['Persone in turno (escluse pulizie) per ogni ora.', 'Verde: bastano per i clienti attesi.', 'Rosso: nessuno, oppure manca qualcuno di un ruolo (es. barista) e si perdono clienti.']],
   // personale
   competenza: ['Competenza', ['0-100. Più alta = più veloce e prodotti migliori.', 'Cresce lavorando e con la formazione.', 'Chi è bravo chiede più stipendio.']],
   morale: ['Morale', ['0-100. Basso = rende meno e può dimettersi.', 'Sale con stipendio sopra mercato, responsabile presente, riposo.', 'Scende con straordinari e stanchezza.']],

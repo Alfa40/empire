@@ -45,8 +45,12 @@ const CATS = {
 
 function hasIva() { return LEGAL_FORMS[S.meta.legal].iva; }
 
-function book(cat, amount, bizId) {
+function book(cat, amount, bizId, what) {
   const mk = monthKey(S.day);
+  // dettaglio voce per voce: S.det[mese][categoria]["attività|voce"]
+  const D = S.det || (S.det = {}), dm = D[mk] || (D[mk] = {}), dc = dm[cat] || (dm[cat] = {});
+  const dk = (bizId || '') + '|' + (what || '');
+  dc[dk] = (dc[dk] || 0) + amount;
   const L = S.ledger[mk] || (S.ledger[mk] = {});
   L[cat] = (L[cat] || 0) + amount;
   if (bizId) {
@@ -57,30 +61,34 @@ function book(cat, amount, bizId) {
   if (CATS[cat] && CATS[cat].rev && ['vendite', 'ingrosso', 'interni', 'affitti_attivi', 'royalties', 'altri_ricavi'].includes(cat)) S.tax.yearRevenue += amount;
 }
 /** incasso con IVA inclusa (gross) */
-function income(gross, ivaRate, cat, bizId) {
+function income(gross, ivaRate, cat, bizId, what) {
   if (gross === 0) return 0;
   let net = gross;
   if (hasIva() && ivaRate) { net = gross / (1 + ivaRate); S.tax.ivaDebit += gross - net; }
   S.cash += gross;
-  book(cat, net, bizId);
+  book(cat, net, bizId, what);
   return net;
 }
 /** spesa con prezzo netto + IVA */
-function expense(net, ivaRate, cat, bizId) {
+function expense(net, ivaRate, cat, bizId, what) {
   if (net === 0) return 0;
   let gross = net * (1 + (ivaRate || 0));
-  if (hasIva()) { S.tax.ivaCredit += gross - net; book(cat, -net, bizId); }
-  else book(cat, -gross, bizId);
+  if (hasIva()) { S.tax.ivaCredit += gross - net; book(cat, -net, bizId, what); }
+  else book(cat, -gross, bizId, what);
   S.cash -= gross;
   return gross;
 }
 /** movimento senza IVA (stipendi, interessi, tasse, finanziamenti...) */
-function cashMove(amount, cat, bizId) {
+function cashMove(amount, cat, bizId, what) {
   S.cash += amount;
-  book(cat, amount, bizId);
+  book(cat, amount, bizId, what);
 }
 /** registrazione solo contabile (non tocca la cassa) */
-function bookOnly(cat, amount, bizId) { book(cat, amount, bizId); }
+function bookOnly(cat, amount, bizId, what) { book(cat, amount, bizId, what); }
+/** etichetta di un dipendente per il registro */
+function empLbl(e) { return e.first + ' ' + e.last + ' · ' + ((ROLES[e.role] || {}).name || e.role); }
+/** tiene il dettaglio solo degli ultimi 24 mesi */
+function pruneDetail() { if (!S.det) return; const keep = new Set(lastMonthKeys(24)); for (const k in S.det) if (!keep.has(+k) && !keep.has(k)) delete S.det[k]; }
 
 // ---------- Report contabili ----------
 function plOf(L) {
@@ -135,7 +143,7 @@ function monthlyDepreciation() {
     const d = Math.min(a.book, a.cost / (a.years * 12));
     if (d <= 0) continue;
     a.book -= d;
-    bookOnly('ammortamenti', -d, a.biz);
+    bookOnly('ammortamenti', -d, a.biz, a.label);
   }
   S.assets = S.assets.filter(a => a.book > 0.5 || a.kind === 'immobile');
 }
@@ -220,7 +228,7 @@ function closeFiscalYear(y) {
   const est = legalTaxEstimate(taxable, revenue);
   const total = Math.round(est.tax + est.inps);
   if (total > 0) {
-    bookOnly('imposte', -total);
+    bookOnly('imposte', -total, null, 'Imposte anno ' + y);
     S.tax.due.push({ amount: total, due: dayFromYMD(y + 1, 5, 30), label: `Imposte anno ${y} (${est.label})` });
   }
   log(`Chiuso l'esercizio ${y}: utile ante imposte ${eur(profit)}, imposte e contributi dovuti ${eur(total)} entro il 30 giugno ${y + 1}.`, profit >= 0 ? 'good' : 'bad');
@@ -289,9 +297,9 @@ function takeLoan(bankId, kind, amount, months, extra = {}) {
   const pay = payment(amount, rate, months);
   const loan = Object.assign({ id: uid('l'), bank: bankId, kind, principal: amount, balance: amount, rate, months, left: months, payment: pay, nextDue: addMonths(S.day, 1), start: S.day }, extra);
   S.loans.push(loan);
-  if (!extra.noCash) cashMove(amount, 'finanziamenti');
+  if (!extra.noCash) cashMove(amount, 'finanziamenti', null, loanLabel(loan));
   const fee = Math.round(amount * (kind === 'mutuo' ? 0.01 : 0.005));
-  if (fee) cashMove(-fee, 'commissioni');
+  if (fee) cashMove(-fee, 'commissioni', null, 'Istruttoria ' + loanLabel(loan));
   return loan;
 }
 function processLoans() {
@@ -299,8 +307,8 @@ function processLoans() {
     if (S.day < l.nextDue) continue;
     const interest = l.balance * l.rate / 12;
     const princ = Math.min(l.balance, l.payment - interest);
-    cashMove(-interest, 'interessi', l.biz || null);
-    cashMove(-princ, 'rimborsi');
+    cashMove(-interest, 'interessi', l.biz || null, loanLabel(l));
+    cashMove(-princ, 'rimborsi', null, loanLabel(l));
     l.balance -= princ; l.left--;
     l.nextDue = addMonths(l.nextDue, 1);
     if (S.cash < -S.overdraft.limit) { S.credit.lateDays += 5; log(`Rata del finanziamento (${loanLabel(l)}) pagata in sconfinamento: il rating peggiora.`, 'bad'); }
@@ -318,7 +326,7 @@ function repayLoan(id) {
   if (!l) return false;
   const fee = l.balance * 0.01;
   if (S.cash < l.balance + fee) return false;
-  cashMove(-l.balance, 'rimborsi'); cashMove(-fee, 'commissioni');
+  cashMove(-l.balance, 'rimborsi', null, loanLabel(l)); cashMove(-fee, 'commissioni', null, 'Estinzione ' + loanLabel(l));
   S.loans = S.loans.filter(x => x !== l);
   log(`Hai estinto anticipatamente: ${loanLabel(l)}.`, 'good');
   unlockAch('prestito_estinto');
@@ -330,7 +338,7 @@ function dailyBankInterest() {
   const neg = -S.cash;
   const within = Math.min(neg, S.overdraft.limit), over = neg - within;
   const cost = within * overdraftRate() / 365 + over * 0.16 / 365;
-  if (cost > 0) cashMove(-cost, 'interessi');
+  if (cost > 0) cashMove(-cost, 'interessi', null, 'Scoperto di conto');
 }
 
 // ---------- Scadenze ----------

@@ -22,7 +22,7 @@ function tileInfo(b, id) {
   const emps = empsOf(b.id);
   switch (id) {
     case 'giornata': { const lost = x.lost || 0; return [T.mode === 'shop' ? (lost ? `−${num(lost)} persi` : num(x.cust || 0) + ' clienti') : num1(x.prod || 0) + ' prodotti', lost > 2 ? 'r' : null]; }
-    case 'turni': { let g = 0; for (let d = 0; d < 7; d++) if (uncoveredHours(b, d).length) g++; return [g ? `${g} giorni scoperti` : emps.length + ' persone', g ? 'r' : null]; }
+    case 'turni': { let g = 0; for (let d = 0; d < 7; d++) if (dayBad(b, d)) g++; return [g ? `${g} giorni da sistemare` : emps.length + ' persone', g ? 'r' : null]; }
     case 'personale': { const sad = emps.filter(e => e.morale < 40).length; return [sad ? `${sad} scontenti` : plural(emps.length, 'dipendente', 'dipendenti'), sad ? 'y' : null]; }
     case 'prodotti': { let off = 0; for (const p of b.products) if (p.on) { const r = p.price / refPrice(b, p); if (r > 1.2 || r < 0.82) off++; } return [off ? `${off} prezzi fuori` : b.products.filter(p => p.on).length + ' attivi', off ? 'y' : null]; }
     case 'produzione': return [MATERIALS[b.output].name, t.full ? 'y' : null];
@@ -42,8 +42,10 @@ function bizHubTiles(b, fromSheet) {
   const ids = bizTabs(T).map(t => t[0]).filter(id => id !== 'riepilogo');
   return `<div class="tiles">${ids.map(id => {
     const [ic, label] = BIZ_SECTIONS[id];
-    const [m] = tileInfo(b, id);
+    let [m, flag] = tileInfo(b, id);
     const st = areaStatus(b, id, adv);
+    // riquadro rosso: il motivo deve essere scritto sul riquadro
+    if (st === 'bad' && flag !== 'r') { const a = adv.find(x => x.lv !== 'b' && x.area.includes(id)); if (a) m = esc(a.t); }
     const dis = tut && tut.tabs && !tut.tabs.includes(id);
     const hl = tut && tut.tab === id;
     return `<button class="tile st-${st} ${hl ? 'hl' : ''}" data-a="${fromSheet ? 'openBiz' : 'tab'}" data-id="${b.id}" data-t="${id}" data-tab="${id}"${dis ? ' disabled' : ''}><span class="ic">${ic}</span><b>${label}</b><span class="m">${m}</span></button>`;
@@ -106,6 +108,7 @@ BIZ_TABS.giornata = (b, T) => {
   const rows = hrs.map(x => `<span class="hh">${String(x.h).padStart(2, '0')}:00</span>${meter(x.s, x.d, max)}<span class="nn">${num(x.s)}/${num(x.d)}</span><span class="nn" title="${esc(x.w.map(name).join(', '))}">👤${x.n}</span>${x.lim && x.d - x.s >= 0.5 ? `<span class="why">−${num(x.d - x.s)} · ${esc(reason(x.lim))}</span>` : ''}`).join('');
   void peak;
   return `<p class="summary">${num(served)} serviti${lost >= 1 ? ` · <span class="neg">${num(lost)} persi</span>` : ''}</p>
+    ${nextDaysStrip(b)}
     ${sec(`Oggi · ${WEEKDAYS[ymd(S.day).wd]}`, 'giornata', `<div class="hours">${rows}</div><div class="legend"><span><i style="background:var(--green)"></i>serviti</span><span><i style="background:var(--red)"></i>persi</span><span>👤 in turno</span></div>`, btn('Turni', 'tab', { t: 'turni' }, 'sm'))}`;
 };
 
@@ -122,22 +125,24 @@ BIZ_TABS.turni = (b, T) => {
   const cov = hourCoverage(b, wd);
   const isOpen = h => shop ? !!b.days[wd] && h >= b.hours[0] && h < b.hours[1] : !!b.days[wd] && h >= 8 && h < 17;
   let est = null;
-  if (shop) {
-    const prof = HOURLY[T.hourly]; let ws = 0; for (let h = b.hours[0]; h < b.hours[1]; h++) ws += prof[h];
-    const daily = estimateCustomers(b) / Math.max(0.3, T.wk[ymd(S.day).wd]) * T.wk[wd];
-    est = h => isOpen(h) && ws ? daily * prof[h] / ws : 0;
-  }
+  const fc = shop ? shiftForecast(b, wd) : null;
+  const fh = {}; if (fc) for (const x of fc.hours) fh[x.h] = x;
+  if (fc) est = h => fh[h] ? fh[h].d : 0;
   const head = `<tr><th class="nm">${WEEKDAYS[wd]}</th>${hours.map(h => `<th>${h}</th>`).join('')}</tr>`;
-  const rows = emps.map(e => `<tr><td class="nm ${e.fatigue > 70 ? 'bad' : ''}"><b>${esc(e.first)}</b><small>${esc(ROLES[e.role].name)} · ${e.wdays[wd] ? shiftLabel(e, wd) : 'riposo'}</small></td>${hours.map(h => {
+  const rows = emps.map(e => `<tr><td class="nm ${e.fatigue > 70 ? 'bad' : ''}"><b>${esc(e.first)}</b><small>${esc(ROLES[e.role].name)} · ${e.wdays[wd] ? shiftLabel(e, wd) : 'riposo'}${e.fatigue > 70 ? ' · <span class="neg">stanco ' + Math.round(e.fatigue) + '%</span>' : ''}</small></td>${hours.map(h => {
     const on = e.wdays[wd] && onShift(e, h, wd);
     return `<td class="cell ${on ? 'on' : ''} ${!e.wdays[wd] ? 'off' : isOpen(h) ? 'open' : ''}"><button data-a="shiftAt" data-e="${e.id}" data-h="${h}" aria-label="${esc(e.first)} dalle ${h}"></button></td>`;
   }).join('')}</tr>`).join('');
-  const covRow = `<tr class="cov"><td class="nm">Copertura ${hb('copertura')}</td>${hours.map(h => `<td class="${isOpen(h) ? (cov[h] ? 'ok' : 'z') : ''}">${cov[h] || (isOpen(h) ? '0' : '')}</td>`).join('')}</tr>`;
+  const short = h => { const x = fh[h]; return x && x.lim && x.lim !== 'locale' && x.d - x.s >= 0.3; };
+  const covRow = `<tr class="cov"><td class="nm">Copertura ${hb('copertura')}</td>${hours.map(h => `<td class="${isOpen(h) ? (!cov[h] || short(h) ? 'z' : 'ok') : ''}">${cov[h] || (isOpen(h) ? '0' : '')}</td>`).join('')}</tr>`;
+  const fcBox = !b.days[wd] ? '<p class="muted">Giorno di chiusura.</p>' : fc ? (fc.probs.length
+    ? `<div class="fc bad"><b>Previsione ${WEEKDAYS[wd]} ${fmtDateShort(fc.day).slice(0, 5)}: −${num(fc.lost)} clienti</b>${fc.probs.map(g => `<div class="kvl"><span class="kvn">${hoursRanges(g.h)}<small>${esc(probText(g))}</small></span><b class="neg">−${num(g.lost)}</b>${g.lim !== 'nessuno' ? btn('+ Assumi ' + ROLES[g.lim].name, 'hireOpen', { target: b.id, role: g.lim }, 'sm') : ''}</div>`).join('')}<small class="muted">Sposta o allunga i turni di chi fa quel lavoro, oppure assumi.</small></div>`
+    : `<div class="fc ok"><b>Previsione ${WEEKDAYS[wd]} ${fmtDateShort(fc.day).slice(0, 5)}: ${num(fc.served)} clienti, tutti serviti</b></div>`) : '';
   const demRow = est ? `<tr class="dem"><td class="nm">Clienti attesi</td>${hours.map(h => `<td>${est(h) >= 0.5 ? num(est(h)) : ''}</td>`).join('')}</tr>` : '';
   const ctrl = emps.map(e => tr([`<b>${esc(e.first)}</b> <small>${esc(ROLES[e.role].name)}</small>`, dayToggles('empDay', e.wdays, { e: e.id }), stepper('empStart', { e: e.id }, e.starts && e.starts.some((x, i) => e.wdays[i] && x != null && x !== e.start) ? 'variabile' : String(e.start || 0).padStart(2, '0') + ':00'), stepper('empHrs', { e: e.id }, e.hours + ' h'), [`${weeklyHours(e)} h${weeklyHours(e) > 40 ? ' ' + badge('straord.', 'y') : ''}`, 'n']]));
-  return sec('Turni', 'turni', `<div class="seg mb">${WEEKDAYS_SHORT.map((w, i) => btn(w + (b.days[i] ? '' : ' ✕'), 'tday', { d: i }, 'sm ' + (wd === i ? 'on ' : '') + (uncoveredHours(b, i).length ? 'bad' : b.days[i] ? 'good' : ''))).join('')}</div>
+  return sec('Turni', 'turni', `<div class="seg mb">${WEEKDAYS_SHORT.map((w, i) => btn(w + (b.days[i] ? '' : ' ✕'), 'tday', { d: i }, 'sm ' + (wd === i ? 'on ' : '') + (dayBad(b, i) ? 'bad' : b.days[i] ? 'good' : ''))).join('')}</div>
       ${emps.length ? `<div class="shift-wrap"><table class="shifts"><thead>${head}</thead><tbody>${rows}${covRow}${demRow}</tbody></table></div>
-      <div class="legend"><span><i style="background:var(--accent)"></i>in turno</span><span><i style="background:var(--panel2)"></i>aperto</span><span><i style="background:var(--red-bg)"></i>scoperto</span><span>tocca = inizio turno</span></div>` : `<p class="muted">Nessun dipendente.</p>`}`,
+      <div class="legend"><span><i style="background:var(--accent)"></i>in turno</span><span><i style="background:var(--panel2)"></i>aperto</span><span><i style="background:var(--red-bg)"></i>personale insufficiente</span><span>tocca = inizio turno</span></div>` : `<p class="muted">Nessun dipendente.</p>`}${fcBox}`,
     btn('+ Assumi', 'hireOpen', { target: b.id }, 'sm pri'))
     + (emps.length ? sec('Orari', 'turni', table(['Dipendente', 'Giorni', 'Inizio', 'Ore', ['Sett.', 'n']], ctrl), '', { closed: true, c: 'orange', sum: plural(emps.length, 'persona', 'persone') }) : '');
 };
@@ -247,7 +252,7 @@ ACT.hireAd = () => {
   const H = UI.hire;
   if (!H.role) { toast('Scegli un ruolo', 'err'); return; }
   if (S.cash < 183) { toast('Liquidità insufficiente', 'err'); return; }
-  expense(150, 0.22, 'formazione', H.target && H.target !== 'hq' ? H.target : null);
+  expense(150, 0.22, 'formazione', H.target && H.target !== 'hq' ? H.target : null, 'Annuncio di lavoro · ' + ((ROLES[H.role] || {}).name || H.role));
   const hr = hqCount('hr') > 0 ? 10 : 0;
   for (let i = 0; i < 4; i++) { const p = makePerson(H.role, H.city, 6 + hr); p.id = uid('c'); p.city = H.city; S.candidates[H.city].unshift(p); }
   commit('4 nuovi candidati');
@@ -477,7 +482,7 @@ ACT.mkSet = (d) => { getBiz(d.b).mkBudget = +d.v; commit(); };
 ACT.campLaunch = (d) => {
   const C = CAMPAIGN[d.c]; const cost = Math.round(C.cost * S.eco.priceLevel);
   if (S.cash < cost * 1.22) { toast('Liquidità insufficiente', 'err'); return; }
-  expense(cost, 0.22, 'marketing', C.scope === 'biz' ? d.t : null);
+  expense(cost, 0.22, 'marketing', C.scope === 'biz' ? d.t : null, C.n);
   S.campaigns.push({ id: uid('m'), camp: C.id, target: d.t, until: S.day + C.days, start: S.day });
   commit('Campagna avviata');
 };
@@ -528,3 +533,19 @@ BIZ_TABS.statistiche = (b) => {
   return sec('Conto economico', 'ce', table(['Voce', ...keys.map(k => [monthLabel(k).slice(0, 3) + ' ' + String(k).slice(2, 4), 'n'])], rows)) + sec('30 giorni', null, histTable(b, 30), '', { closed: true, c: 'green' });
 };
 BIZ_TABS.recensioni = (b) => sec('Recensioni', 'reputazione', b.reviews.length ? `<ul class="list-log">${b.reviews.map(r => `<li><span class="d">${fmtDateShort(r.day).slice(0, 5)}</span><span><b>${'★'.repeat(r.st)}${'☆'.repeat(5 - r.st)}</b> ${esc(r.txt)}</span></li>`).join('')}</ul>` : '<p class="muted">—</p>');
+
+/** prossimi 7 giorni: previsione clienti persi; tocca un giorno per i suoi turni */
+function nextDaysStrip(b) {
+  const T = bizType(b);
+  if (T.mode !== 'shop' || T.capMode === 'day') return '';
+  const chips = [];
+  for (let k = 1; k <= 7; k++) {
+    const wd = ymd(S.day + k).wd;
+    const lbl = (k === 1 ? 'Domani' : WEEKDAYS[wd]) + ' <small>' + fmtDateShort(S.day + k).slice(0, 5) + '</small>';
+    if (!b.days[wd]) { chips.push(ovChip(lbl, 'chiuso', 'off', 'ovDay', { b: b.id, d: wd })); continue; }
+    const f = shiftForecast(b, wd), unc = uncoveredHours(b, wd).length;
+    const bad = unc || (f && f.probs.length);
+    chips.push(ovChip(lbl, unc ? 'scoperto' : f && f.probs.length ? '−' + num(f.lost) + ' clienti' : 'ok', bad ? 'bad' : 'ok', 'ovDay', { b: b.id, d: wd }));
+  }
+  return '<h4>Prossimi giorni <small class="muted">previsione · tocca per i turni</small></h4><div class="ovcs">' + chips.join('') + '</div>';
+}

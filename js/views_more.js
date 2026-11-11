@@ -71,7 +71,7 @@ ACT.legalChangeOk = (d) => {
   if (L.capital && S.nw < L.capital) { toast('Patrimonio insufficiente', 'err'); return; }
   const cost = L.setup || 500;
   if (S.cash < cost) { toast('Liquidità insufficiente', 'err'); return; }
-  cashMove(-cost, 'licenze'); S.meta.legal = d.v; S.meta.legalSince = S.day;
+  cashMove(-cost, 'licenze', null, 'Cambio forma giuridica'); S.meta.legal = d.v; S.meta.legalSince = S.day;
   UI.modal = null; log(`Nuova forma giuridica: ${L.name}.`, 'info'); commit('Fatto');
 };
 
@@ -242,7 +242,7 @@ VIEWS.marketing = () => {
     }).join('')}</div>`, '', { closed: true, sum: S.campaigns.length ? S.campaigns.length + ' attive' : '' })}
     ${sec('Franchising', 'franchising', fr, '', { closed: true, sum: F.on ? F.affiliates + ' affiliati' : 'no' })}`;
 };
-ACT.brandNew = () => { const n = $('#brandName').value.trim(); if (!n) { toast('Scrivi un nome', 'err'); return; } if (S.cash < 1500) { toast('Liquidità insufficiente', 'err'); return; } cashMove(-1500, 'licenze'); S.brands.push({ id: uid('br'), name: n, aw: 0 }); commit('Marchio creato'); };
+ACT.brandNew = () => { const n = $('#brandName').value.trim(); if (!n) { toast('Scrivi un nome', 'err'); return; } if (S.cash < 1500) { toast('Liquidità insufficiente', 'err'); return; } cashMove(-1500, 'licenze', null, 'Registrazione marchio ' + n); S.brands.push({ id: uid('br'), name: n, aw: 0 }); commit('Marchio creato'); };
 ACT.brandDel = (d) => { S.brands = S.brands.filter(b => b.id !== d.b); for (const b of S.biz) if (b.brand === d.b) b.brand = null; if (S.franchise.brand === d.b) S.franchise.on = false; commit(); };
 ACT.campCity = (d) => ACT.campLaunch({ c: d.c, t: $('#ct_' + d.c).value });
 ACT.frStart = (d) => { S.franchise = { on: true, brand: d.b, affiliates: S.franchise.affiliates || 0, fee: 600, entry: 18000 }; commit('Franchising avviato'); };
