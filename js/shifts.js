@@ -171,6 +171,7 @@ function autoShifts(b, keepDays) {
 /** assegna un orario a chi non ce l'ha (salvataggi vecchi, acquisizioni) */
 function ensureShifts() {
   if (!S) return;
+  backfillPayDetail();
   for (const b of S.biz) if (empsOf(b.id).some(e => e.start == null)) autoShifts(b, true);
   for (const e of Object.values(S.emps)) if (e.start == null) e.start = 9;
 }

@@ -359,3 +359,29 @@ function deadlines(days) {
   for (const x of S.tax.due) if (x.due <= end) out.push({ d: x.due, t: 'Imposte', v: -x.amount });
   return out.sort((a, b) => a.d - b.d);
 }
+
+/** salvataggi precedenti al registro dettagliato: divide stipendi e contributi
+    già pagati tra i dipendenti, in proporzione al loro costo mensile */
+function backfillPayDetail() {
+  if (!S || !S.ledger) return;
+  const D = S.det || (S.det = {});
+  for (const mk in S.ledger) {
+    const y = Math.floor(mk / 100), m = mk % 100;
+    const first = dayFromYMD(y, m - 1, 1);
+    for (const cat of ['stipendi', 'contributi']) {
+      const tot = S.ledger[mk][cat]; if (!tot) continue;
+      const groups = {}; let bizSum = 0;
+      for (const id in S.bizLedger) { const v = ((S.bizLedger[id] || {})[mk] || {})[cat]; if (v) { groups[id] = v; bizSum += v; } }
+      groups[''] = tot - bizSum;
+      const dc = (D[mk] || (D[mk] = {}))[cat] || (D[mk][cat] = {});
+      for (const bz in groups) {
+        let done = 0; for (const k in dc) if (k.startsWith(bz + '|')) done += dc[k];
+        const rest = groups[bz] - done; if (Math.abs(rest) < 1) continue;
+        const emps = Object.values(S.emps).filter(e => (bz ? e.biz === bz : e.biz === 'hq') && e.hired <= first);
+        const w = emps.map(e => Math.max(1, empMonthlyCost(e))), W = w.reduce((a, c) => a + c, 0);
+        if (!W) continue;
+        emps.forEach((e, i) => { const k = bz + '|' + empLbl(e); dc[k] = (dc[k] || 0) + rest * w[i] / W; });
+      }
+    }
+  }
+}
