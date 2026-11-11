@@ -23,7 +23,7 @@ function tileInfo(b, id) {
   const emps = empsOf(b.id);
   switch (id) {
     case 'giornata': { const lost = x.lost || 0; return [T.mode === 'shop' ? (lost ? `−${num(lost)} persi` : num(x.cust || 0) + ' clienti') : num1(x.prod || 0) + ' prodotti', lost > 2 ? 'r' : null]; }
-    case 'turni': { let g = 0; for (let d = 0; d < 7; d++) if (dayBad(b, d)) g++; return [g ? `${plural(g, "giorno", "giorni")} da sistemare` : emps.length + ' persone', g ? 'r' : null]; }
+    case 'turni': { let g = 0; for (let d = 0; d < 7; d++) if (dayBad(b, d)) g++; return [g ? plural(g, "giorno scoperto", "giorni scoperti") : emps.length + ' persone', g ? 'r' : null]; }
     case 'personale': { const sad = emps.filter(e => e.morale < 40).length; return [sad ? `${sad} scontenti` : plural(emps.length, 'dipendente', 'dipendenti'), sad ? 'y' : null]; }
     case 'prodotti': { let off = 0; for (const p of b.products) if (p.on) { const r = p.price / refPrice(b, p); if (r > 1.2 || r < 0.82) off++; } return [off ? `${off} prezzi fuori` : b.products.filter(p => p.on).length + ' attivi', off ? 'y' : null]; }
     case 'produzione': return [MATERIALS[b.output].name, t.full ? 'y' : null];
@@ -40,8 +40,13 @@ function tileInfo(b, id) {
 function bizHubTiles(b, fromSheet) {
   const T = bizType(b), tut = tutorialState();
   const adv = adviseBiz(b);
-  const ids = bizTabs(T).map(t => t[0]).filter(id => id !== 'riepilogo');
-  return `<div class="tiles">${ids.map(id => {
+  const MORE = ['miglioramenti', 'marketing', 'impostazioni', 'recensioni'];
+  const all = bizTabs(T).map(t => t[0]).filter(id => id !== 'riepilogo');
+  const ids = all.filter(id => !MORE.includes(id));
+  const more = all.filter(id => MORE.includes(id));
+  const moreBad = more.some(id => areaStatus(b, id, adv) === 'bad');
+  const moreTile = more.length && !fromSheet ? `<button class="tile st-${moreBad ? 'bad' : 'ok'} c-gray" data-a="bizMore"><span class="ic">⋯</span><b>Altro</b>${moreBad ? '<span class="m">da vedere</span>' : ''}</button>` : '';
+  return `<div class="tiles">${(fromSheet ? all : ids).map(id => {
     const [ic, label, col] = BIZ_SECTIONS[id];
     let [m, flag] = tileInfo(b, id);
     const st = areaStatus(b, id, adv);
@@ -49,8 +54,8 @@ function bizHubTiles(b, fromSheet) {
     if (st === 'bad' && flag !== 'r') { const a = adv.find(x => x.lv !== 'b' && x.area.includes(id)); if (a) m = esc(a.t); }
     const dis = tut && tut.tabs && !tut.tabs.includes(id);
     const hl = tut && tut.tab === id;
-    return `<button class="tile st-${st} c-${col} ${hl ? 'hl' : ''}" data-a="${fromSheet ? 'openBiz' : 'tab'}" data-id="${b.id}" data-t="${id}" data-tab="${id}"${dis ? ' disabled' : ''}><span class="ic">${ic}</span><b>${label}</b><span class="m">${m}</span></button>`;
-  }).join('')}</div>`;
+    return `<button class="tile st-${st} c-${col} ${hl ? 'hl' : ''}" data-a="${fromSheet ? 'openBiz' : 'tab'}" data-id="${b.id}" data-t="${id}" data-tab="${id}"${dis ? ' disabled' : ''}><span class="ic">${ic}</span><b>${label}</b>${st === 'bad' ? `<span class="m">${m}</span>` : ''}</button>`;
+  }).join('')}${moreTile}</div>`;
 }
 function bizPills(b) {
   const T = bizType(b), x = b.hist[b.hist.length - 1] || {}, r30 = recentDaily(30, b.id);
@@ -162,7 +167,7 @@ ACT.empDay = (d) => { const e = S.emps[d.e]; if (!e) return; e.wdays[+d.i] = e.w
 // ---------- Personale ----------
 BIZ_TABS.personale = (b) => {
   const emps = empsOf(b.id);
-  return climateBox(b) + sec(`Personale · ${emps.length}`, 'ruoli', emps.length ? '<small class="muted">Competenza · stipendio</small>' + roleSections(emps, e => e.role, empChip, s => `<div class="ovcs">${s}</div>`) : '<p class="muted">Nessuno.</p>',
+  return climateBox(b) + sec(`Personale · ${emps.length}`, 'ruoli', emps.length ? roleSections(emps, e => e.role, empChip, s => `<div class="ovcs">${s}</div>`) : '<p class="muted">Nessuno.</p>',
     btn('+ Assumi', 'hireOpen', { target: b.id }, 'sm pri' + (tutorialHl('hire') ? ' hl' : '')));
 };
 function empRow(e) {
@@ -551,3 +556,12 @@ function nextDaysStrip(b) {
   }
   return '<h4>Prossimi giorni <small class="muted">previsione · tocca per i turni</small></h4><div class="ovcs">' + chips.join('') + '</div>';
 }
+
+// riquadri meno usati, raccolti in "Altro"
+ACT.bizMore = () => openModal('bizMore');
+MODALS.bizMore = () => {
+  const b = curBiz(); if (!b) return '';
+  const adv = adviseBiz(b);
+  const ids = bizTabs(bizType(b)).map(t => t[0]).filter(id => ['miglioramenti', 'marketing', 'impostazioni', 'recensioni'].includes(id));
+  return sheet('⋯ Altro', `<div class="tiles">${ids.map(id => { const [ic, label, col] = BIZ_SECTIONS[id]; const st = areaStatus(b, id, adv); const [m] = tileInfo(b, id); return `<button class="tile st-${st} c-${col}" data-a="openBiz" data-id="${b.id}" data-tab="${id}"><span class="ic">${ic}</span><b>${label}</b>${st === 'bad' ? `<span class="m">${m}</span>` : ''}</button>`; }).join('')}</div>`, '');
+};

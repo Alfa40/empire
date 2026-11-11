@@ -163,3 +163,11 @@ h3.sh { margin: 1rem 0 .2rem; font-size: 1rem; }
 .climate.bad { border-color: var(--red); background: var(--red-bg); }
 .climate small { color: var(--muted); font-weight: 600; }
 .climate .bar { width: 100%; }
+
+/* testata finanza compatta */
+.finhead { display: flex; align-items: center; gap: .8rem; margin-bottom: .7rem; }
+.fh-n { all: unset; cursor: pointer; display: grid; gap: .05rem; }
+.fh-n small { color: var(--muted); font-weight: 700; font-size: .78rem; }
+.fh-n b { font-size: 1.7rem; font-weight: 900; line-height: 1.1; }
+.ovt b .cnt { font-weight: 700; color: var(--muted); font-size: .8em; }
+.bhero .hstat b small { color: var(--muted); font-size: .75rem; font-weight: 700; }

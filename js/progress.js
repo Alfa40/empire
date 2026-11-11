@@ -152,5 +152,5 @@ function goalCard() {
   const m = curMilestone(); if (!m) return '';
   const [v, max] = m.prog();
   const i = MILESTONES.indexOf(m);
-  return `<button class="goal" data-a="path"><span class="gi">${m.ic}</span><span class="gt"><small>Obiettivo ${i + 1}/${MILESTONES.length}</small><b>${esc(m.goal)}</b><span class="fbar">${bar(v, max, 'g')}</span></span><i>›</i></button>`;
+  return `<button class="goal" data-a="path"><span class="gi">${m.ic}</span><span class="gt"><b>${esc(m.goal)}</b><span class="fbar">${bar(v, max, 'g')}</span></span><i>›</i></button>`;
 }

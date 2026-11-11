@@ -59,27 +59,26 @@ function staffSentence(all) {
   if (!all.length) return '<p class="say">💬 Nessun dipendente: tocca "+ Assumi".</p>';
   const tired = all.filter(e => e.fatigue > 70).length, sad = all.filter(e => e.morale < 40).length, sick = all.filter(e => e.sickUntil > S.day).length;
   const bits = [];
-  if (tired) bits.push(`<b>${plural(tired, 'persona stanca', 'persone stanche')}</b> (dai più riposo nei turni)`);
-  if (sad) bits.push(`<b>${plural(sad, 'persona scontenta', 'persone scontente')}</b> (stipendio o carico di lavoro)`);
+  if (tired) bits.push(plural(tired, 'stanco', 'stanchi'));
+  if (sad) bits.push(plural(sad, 'scontento', 'scontenti'));
   if (sick) bits.push(`${plural(sick, 'persona', 'persone')} in malattia`);
-  return `<p class="say">💬 ${bits.length ? 'Da guardare: ' + bits.join(', ') + '.' : 'La squadra sta bene: morale medio ' + Math.round(avg(all, e => e.morale)) + '.'}</p>`;
+  return bits.length ? `<p class="say">⚠️ ${bits.join(', ')}</p>` : '';
 }
 function empChip(e) {
   const b = e.biz === 'hq' ? null : getBiz(e.biz);
   const st = empStatus(e), away = st !== 'Attivo';
-  return ovChip(`${esc(e.first)} <small>${b ? esc(b.name) : 'Sede'}</small>`, away ? st.toLowerCase() : empBad(e) ? empWhy(e) : `${Math.round(e.skill)} · ${eur0(e.wage)}`, empBad(e) ? 'bad' : away ? 'off' : 'ok', 'sub', { x: 'empSheet', e: e.id });
+  return ovChip(`${esc(e.first)}${S.biz.length > 1 || hqEmps().length ? ` <small>${b ? esc(b.name) : 'Sede'}</small>` : ''}`, away ? st.toLowerCase() : empBad(e) ? empWhy(e) : `${Math.round(e.skill)} · ${eur0(e.wage)}`, empBad(e) ? 'bad' : away ? 'off' : 'ok', 'sub', { x: 'empSheet', e: e.id });
 }
 VIEWS.staff = () => {
   const all = staffList();
   const sad = all.filter(empBad).length;
   const tiles = staffGroups().filter(g => g.emps.length).map(g => {
     const bad = g.emps.filter(empBad).length;
-    return `<button class="ovt ${bad ? 'bad' : 'ok'}" data-a="staffGroup" data-g="${g.id}"><span class="ic">${g.ic}</span><b>${g.n}</b><small>${bad ? bad + ' da vedere' : plural(g.emps.length, 'persona', 'persone')}</small></button>`;
+    return `<button class="ovt ${bad ? 'bad' : 'ok'}" data-a="staffGroup" data-g="${g.id}"><span class="ic">${g.ic}</span><b>${g.n} <span class="cnt">${g.emps.length}</span></b>${bad ? `<small>${bad} da vedere</small>` : ''}</button>`;
   }).join('');
   return `<div class="ov-head"><h1>Personale</h1>${hb('ruoli')}</div>
-    <div class="ovcs ovg">${ovChip('👥 Persone', all.length, 'ok', 'help', { k: 'ruoli' })}${ovChip('💶 Costo/mese', eur0(sum(all, e => empMonthlyCost(e) * 1.37)), 'ok', 'help', { k: 'stipendio' })}${ovChip('🙂 Morale', all.length ? Math.round(avg(all, e => e.morale)) : '–', sad ? 'bad' : 'ok', 'help', { k: 'morale' })}</div>
     ${staffSentence(all)}
-    <div class="row mb">${select('stFilter', [['', 'Ovunque'], ['hq', 'Sede'], ...S.biz.map(b => [b.id, b.name])], UI.st.filter)}${btn('+ Assumi', 'hireOpen', {}, 'pri')}</div>
+    <div class="row mb">${S.biz.length > 1 || hqEmps().length ? select('stFilter', [['', 'Ovunque'], ['hq', 'Sede'], ...S.biz.map(b => [b.id, b.name])], UI.st.filter) : ''}${btn('+ Assumi', 'hireOpen', {}, 'pri')}</div>
     ${tiles ? `<div class="ovts">${tiles}</div>` : '<p class="muted">Nessun dipendente.</p>'}`;
 };
 ACT.staffGroup = (d) => openModal('staffGroup', { g: d.g });
@@ -87,7 +86,7 @@ MODALS.staffGroup = (M) => {
   const g = staffGroups().find(x => x.id === M.g); if (!g) return '';
   const subs = g.roles.map(r => ({ r, emps: g.emps.filter(e => e.role === r) })).filter(x => x.emps.length);
   const body = subs.map(x => `<h4>${esc(ROLES[x.r].name)} <small class="muted">${x.emps.length}</small></h4><div class="ovcs">${x.emps.sort((a, c) => (a.biz > c.biz ? 1 : -1)).map(empChip).join('')}</div>`).join('') || '<p class="muted">Nessuno.</p>';
-  return sheet(`${g.ic} ${g.n}`, `<small class="muted">Competenza · stipendio</small>${body}`, '', { help: 'ruoli' });
+  return sheet(`${g.ic} ${g.n}`, body, '', { help: 'ruoli' });
 };
 
 // ===================== FINANZA =====================
@@ -136,13 +135,13 @@ function finTiles(groups, mode, bizId) {
 function finPerSeg() { return `<div class="seg mb">${FIN_PERIODS.map(([k, l]) => btn(l, 'finPer', { p: k }, 'sm ' + ((UI.fin.per || 'mese') === k ? 'on' : ''))).join('')}</div>`; }
 function finFilters() {
   return `${finPerSeg()}
-    <div class="row mb">${select('finBiz', [['', 'Tutta l\'impresa'], ...S.biz.map(b => [b.id, b.name])], UI.fin.biz)}</div>`;
+    ${S.biz.length > 1 ? `<div class="row mb">${select('finBiz', [['', 'Tutta l\'impresa'], ...S.biz.map(b => [b.id, b.name])], UI.fin.biz)}</div>` : ''}`;
 }
 ACT.finPer = (d) => { UI.fin.per = d.p; render(); };
 
 const _financeOld = VIEWS.finance;
 VIEWS.finance = () => {
-  const tabs = [['ce', '💶 Entrate e spese'], ['cassa', '🔁 Cassa'], ['sp', '🏛️ Patrimonio'], ['tasse', '🧾 Imposte']].filter(t => !FIN_FEAT[t[0]] || has(FIN_FEAT[t[0]]));
+  const tabs = [['ce', 'Entrate e spese'], ['cassa', 'Cassa'], ['sp', 'Patrimonio'], ['tasse', 'Imposte']].filter(t => !FIN_FEAT[t[0]] || has(FIN_FEAT[t[0]]));
   if (!tabs.some(t => t[0] === UI.fin.tab)) UI.fin.tab = 'ce';
   const head = `<div class="ov-head"><h1>Finanza</h1>${hb(UI.fin.tab === 'cassa' ? 'flussi' : UI.fin.tab === 'sp' ? 'sp' : UI.fin.tab === 'tasse' ? 'imposte' : 'ce')}</div><div class="seg mb">${tabs.map(([id, l]) => btn(l, 'finTab', { t: id }, 'sm ' + (UI.fin.tab === id ? 'on' : ''))).join('')}</div>`;
   if (UI.fin.tab === 'sp' || UI.fin.tab === 'tasse') return head + _financeOld().replace(/^<div class="head">[\s\S]*?<\/div><div class="tabs">[\s\S]*?<\/div>/, '');
@@ -162,12 +161,16 @@ VIEWS.finance = () => {
   const months = lastMonthKeys(6).reverse().filter(k => k >= monthKey(S.startDay));
   const trend = months.map(k => { const p = monthPL(k, bizId); return `<div class="kvl"><span>${monthLabel(k).slice(0, 3)} ${String(k).slice(2, 4)}</span><b class="${cls(p.profit)}">${eur0(p.profit)}</b></div>`; }).join('');
   return head + finFilters()
-    + `<div class="ovcs ovg">${ovChip('⬆️ Ricavi', eur0(pl.rev), 'ok', 'help', { k: 'ce' })}${ovChip('⬇️ Costi', eur0(pl.cost), 'ok', 'help', { k: 'ce' })}${ovChip('= Utile', `<span class="${cls(pl.profit)}">${eur0(pl.profit)}</span>`, pl.profit < 0 ? 'bad' : 'ok', 'help', { k: 'utile' })}</div>`
-    + (inc.length ? `<h4>Entrate</h4>${finTiles(inc, 'pl')}` : '')
-    + (exp.length ? `<h4>Spese</h4>${finSpend(exp, pl.cost)}${finTiles(exp, 'pl')}` : '')
+    + finHead(pl, exp)
+    + (inc.length ? finTiles(inc, 'pl') : '')
+    + (exp.length ? finTiles(exp, 'pl') : '')
     + (!groups.length ? '<p class="muted">Nessun movimento nel periodo.</p>' : '')
     + `<div class="mt">${sec('Utile mese per mese', 'ce', trend, '', { closed: true, sum: plural(months.length, 'mese', 'mesi') })}</div>`;
 };
+/** utile grande + ciambella delle spese */
+function finHead(pl, exp) {
+  return `<div class="finhead">${exp.length && pl.cost ? donut(exp.map(g => ({ v: g.v, c: g.c || 'blue' })), 76) : ''}<button class="fh-n" data-a="help" data-k="utile"><small>Utile</small><b class="${cls(pl.profit)}">${eur0(pl.profit)}</b><small>${eur0(pl.rev)} − ${eur0(-pl.cost)}</small></button></div>`;
+}
 /** ciambella delle spese con frase: dove vanno i soldi */
 function finSpend(exp, cost) {
   if (!exp.length || !cost) return '';
@@ -201,7 +204,7 @@ MODALS.finGroup = (M) => {
   }
   const per_l = (FIN_PERIODS.find(p => p[0] === (UI.fin.per || 'mese')) || FIN_PERIODS[0])[1];
   return sheet(`${g.ic} ${g.n}`, `<small class="muted">${per_l}${bizId && getBiz(bizId) ? ' · ' + esc(getBiz(bizId).name) : ''}</small>
-    <div class="kpis">${kpi('Totale', eur0(all), '', cls(all))}</div><h4>Voci <small class="muted">tocca per il dettaglio</small></h4>${voce}${pers}${per}`, '', { help: M.m === 'cash' ? 'flussi' : 'ce' });
+    <div class="kpis">${kpi('Totale', eur0(all), '', cls(all))}</div><h4>Voci</h4>${voce}${pers}${per}`, '', { help: M.m === 'cash' ? 'flussi' : 'ce' });
 };
 
 // ---------- dettaglio di una voce: ogni singola spesa o entrata ----------
@@ -251,9 +254,9 @@ BIZ_TABS.statistiche = (b) => {
   const months = lastMonthKeys(6).reverse().filter(k => k >= monthKey(b.created));
   const trend = months.map(k => { const p = monthPL(k, b.id); return '<div class="kvl"><span>' + monthLabel(k).slice(0, 3) + ' ' + String(k).slice(2, 4) + '</span><b class="' + cls(p.profit) + '">' + eur0(p.profit) + '</b></div>'; }).join('');
   return finPerSeg()
-    + '<div class="ovcs ovg">' + ovChip('⬆️ Ricavi', eur0(pl.rev), 'ok', 'help', { k: 'ce' }) + ovChip('⬇️ Costi', eur0(pl.cost), 'ok', 'help', { k: 'ce' }) + ovChip('= Utile', '<span class="' + cls(pl.profit) + '">' + eur0(pl.profit) + '</span>', pl.profit < 0 ? 'bad' : 'ok', 'help', { k: 'utile' }) + '</div>'
-    + (inc.length ? '<h4>Entrate</h4>' + finTiles(inc, 'pl', b.id) : '')
-    + (exp.length ? '<h4>Spese</h4>' + finSpend(exp, pl.cost) + finTiles(exp, 'pl', b.id) : '')
+    + finHead(pl, exp)
+    + (inc.length ? finTiles(inc, 'pl', b.id) : '')
+    + (exp.length ? finTiles(exp, 'pl', b.id) : '')
     + (!groups.length ? '<p class="muted">Nessun movimento nel periodo.</p>' : '')
     + '<div class="mt">' + sec('Utile mese per mese', 'ce', trend, '', { closed: true, sum: plural(months.length, 'mese', 'mesi') }) + '</div>'
     + sec('30 giorni', null, histTable(b, 30), '', { closed: true, c: 'green' });

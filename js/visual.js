@@ -27,14 +27,13 @@ function bizSentence(b) {
   const T = bizType(b);
   if (b.status === 'setup') {
     const miss = missingRequired(b).length, ne = empsOf(b.id).length;
-    return `Stai allestendo il locale: ${miss ? 'mancano ' + plural(miss, 'attrezzatura', 'attrezzature') : 'attrezzature pronte'}${ne ? '' : ', nessun dipendente'}.`;
+    return miss ? '⚠️ Mancano ' + plural(miss, 'attrezzatura', 'attrezzature') : ne ? '' : '⚠️ Nessun dipendente';
   }
-  if (b.status === 'paused') return 'Attività sospesa: paghi affitto e stipendi senza incassare.';
+  if (b.status === 'paused') return '⏸️ Sospesa';
   const days = S.day - (b.opened || b.created), r = recentDaily(30, b.id);
-  let s = days < 21 ? 'Sei agli inizi: i clienti ti stanno scoprendo.' : r.profit >= 0 ? `Va bene: ${eur0(r.profit)} di utile negli ultimi 30 giorni.` : `È in perdita: ${eur0(r.profit)} negli ultimi 30 giorni.`;
   const top = adviseBiz(b).find(a => a.lv === 'r') || adviseBiz(b).find(a => a.lv === 'y');
-  if (top) s += ` Da guardare: <b>${esc(top.t)}</b>.`;
-  else if (days >= 21) s += ' Nessun problema in vista.';
+  let s = top ? `⚠️ ${esc(top.t)}` : '';
+  void days; void r;
   void T;
   return s;
 }
@@ -43,10 +42,10 @@ function bizColor(b) { return SECTOR_C[bizType(b).sector] || 'blue'; }
 /** intestazione illustrata dell'attività: tenda a righe, icona grande, frase, andamento */
 function bizHero(b) {
   const T = bizType(b), r = recentDaily(30, b.id);
-  const sub = `${esc(CITY[b.city].name)} · ${esc(DISTRICT[b.district].name)}${T.mode === 'shop' && b.status !== 'setup' ? ' · ' + stars(b.rep) : ''}`;
+  const sub = T.mode === 'shop' && b.status !== 'setup' ? stars(b.rep) : '';
   const ser = profitSeries(b);
   return `<section class="bhero c-${bizColor(b)}"><div class="awn" aria-hidden="true"></div>
     <div class="hrow"><span class="hico">${T.icon}</span><div class="hn"><h1>${esc(b.name)}</h1><small>${sub}</small></div></div>
-    <p class="say">💬 ${bizSentence(b)}</p>
-    ${ser.length >= 2 ? `<div class="hstat"><div><small>Utile 30 giorni</small><b class="${cls(r.profit)}">${eur0(r.profit)}</b></div>${spark(ser, 150, 38)}</div>` : ''}</section>`;
+    ${bizSentence(b) ? `<p class="say">${bizSentence(b)}</p>` : ''}
+    ${ser.length >= 2 ? `<div class="hstat"><b class="${cls(r.profit)}">${eur0(r.profit)} <small>30 gg</small></b>${spark(ser, 150, 38)}</div>` : ''}</section>`;
 }

@@ -102,5 +102,5 @@ function climateBox(b) {
   if (sad) why.push(plural(sad, 'persona scontenta', 'persone scontente'));
   if (law) why.push(plural(law, 'orario fuori legge', 'orari fuori legge'));
   if (!E.some(e => e.role === 'manager')) why.push('nessun responsabile');
-  return `<div class="climate ${c < 40 ? 'bad' : ''}"><div class="row between"><b>🤝 Clima di squadra ${hb('clima')}</b><b>${c}/100 · ${climateWord(c)}</b></div>${bar(c, 100, c >= 55 ? 'g' : c >= 40 ? 'y' : 'r')}<small>${why.length ? 'Pesa: ' + why.join(', ') + '.' : 'Squadra unita: rende di più e si dimette meno.'}</small></div>`;
+  return `<div class="climate ${c < 40 ? 'bad' : ''}"><div class="row between"><b>🤝 Clima di squadra ${hb('clima')}</b><b>${c}/100 · ${climateWord(c)}</b></div>${bar(c, 100, c >= 55 ? 'g' : c >= 40 ? 'y' : 'r')}${why.length ? `<small>${why.join(', ')}</small>` : ''}</div>`;
 }

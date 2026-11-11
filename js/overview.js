@@ -27,7 +27,7 @@ function ovAreas(b) {
     if (g) gap++;
     return ovChip(WEEKDAYS[i], closed ? 'chiuso' : unc ? 'scoperto' : g ? '−' + num(f.lost) + ' clienti' : 'ok', closed ? 'off' : g ? 'bad' : 'ok', 'ovDay', { b: b.id, d: i });
   }).join('');
-  out.push({ id: 'turni', ic: '🗓️', title: 'Turni', sum: gap ? `${plural(gap, "giorno", "giorni")} da sistemare` : 'ok', bad: gap > 0, chips: days, note: 'Tocca un giorno per i turni' });
+  out.push({ id: 'turni', ic: '🗓️', title: 'Turni', sum: gap ? plural(gap, "giorno", "giorni") : 'ok', bad: gap > 0, chips: days, note: 'Tocca un giorno per i turni' });
   // persone
   const emps = empsOf(b.id).slice().sort((x, y) => roleRank(x.role) - roleRank(y.role) || (y.wdays[wdNext] - x.wdays[wdNext]) || startOn(x, wdNext) - startOn(y, wdNext));
   const nBad = emps.filter(empBad).length;
@@ -83,15 +83,18 @@ function ovBiz(b) {
   const st = b.status === 'setup' ? 'bad' : bizStatus(b);
   const r30 = recentDaily(30, b.id);
   const AC = { turni: 'orange', personale: 'orange', prodotti: 'purple', produzione: 'teal', magazzino: 'teal', attrezzature: 'teal' };
-  const tiles = ovAreas(b).map(x => `<button class="ovt c-${AC[x.id] || 'blue'} ${x.bad ? 'bad' : 'ok'}" data-a="ovArea" data-b="${b.id}" data-t="${x.id}"><span class="ic">${x.ic}</span><b>${x.title}</b><small>${x.sum}</small></button>`).join('');
-  const sub = b.status === 'setup' ? 'da completare' : b.status === 'paused' ? 'sospesa' : `<span class="${cls(r30.profit)}">${eur0(r30.profit)}</span> in 30 gg${T.mode === 'shop' ? ' · ' + stars(b.rep) : ''}`;
+  const tiles = ovAreas(b).map(x => `<button class="ovt c-${AC[x.id] || 'blue'} ${x.bad ? 'bad' : 'ok'}" data-a="ovArea" data-b="${b.id}" data-t="${x.id}"><span class="ic">${x.ic}</span><b>${x.title}</b>${x.bad ? `<small>${x.sum}</small>` : ''}</button>`).join('');
+  const sub = b.status === 'setup' ? 'da completare' : b.status === 'paused' ? 'sospesa' : `<span class="${cls(r30.profit)}">${eur0(r30.profit)}</span>`;
   return `<section class="ovb st-${st}"><button class="ovb-t" data-a="openBiz" data-id="${b.id}" data-tab="riepilogo"><span class="bi c-${bizColor(b)}">${T.icon}</span><span class="nm"><b>${esc(b.name)}</b><small>${sub}</small></span>${b.hist.length >= 2 ? spark(profitSeries(b), 84, 28) : ''}<i>›</i></button><div class="ovts">${tiles}</div></section>`;
 }
 
 function ovGroup() {
   const pl = monthPL(monthKey(S.day));
   const dl = deadlines(30).filter(x => x.v);
-  return `<div class="ovcs ovg">${ovChip('💶 Cassa', `<span class="${S.cash < 0 ? 'neg' : ''}">${eur0(S.cash)}</span>`, S.cash < 0 ? 'bad' : 'ok', 'moneySheet', {})}${ovChip('📆 Mese', `<span class="${cls(pl.profit)}">${eur0(pl.profit)}</span>`, pl.profit < 0 ? 'bad' : 'ok', 'nav', { v: 'finance' })}${dl.length ? ovChip('⏳ ' + fmtDateShort(dl[0].d).slice(0, 5) + ' ' + esc(dl[0].t), eur0(dl[0].v), -dl[0].v > S.cash ? 'bad' : 'ok', 'nav', { v: 'calendar' }) : ''}</div>`;
+  void pl;
+  // solo se una scadenza vicina supera la cassa
+  const d0 = dl.find(x => -x.v > S.cash);
+  return d0 ? `<div class="ovcs ovg">${ovChip('⏳ ' + fmtDateShort(d0.d).slice(0, 5) + ' ' + esc(d0.t), eur0(d0.v), 'bad', 'nav', { v: 'calendar' })}</div>` : '';
 }
 
 VIEWS.dash = () => {
