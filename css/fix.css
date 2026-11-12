@@ -211,3 +211,12 @@ svg.face, svg.mach { flex: none; display: block; }
 svg.mat { flex: none; display: block; }
 .pic-head b { text-transform: none; }
 .pic-head b:first-letter { text-transform: uppercase; }
+
+table.shifts .nm svg.face { float: left; margin: 0 .4rem 0 0; }
+.ovt .ic.pic { background: none; width: auto; height: auto; padding: 0; box-shadow: none; border: 0; }
+.pic-h small { display: block; }
+
+.tile .ic.pic, .ovt .ic.pic { background: none !important; box-shadow: none !important; border: 0 !important; width: auto !important; height: auto !important; padding: 0 !important; display: flex; justify-content: center; }
+.tile .ic.pic svg { width: 48px; height: 48px; }
+
+.hico.pic, .bi.pic { background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; width: auto !important; height: auto !important; display: inline-flex; }

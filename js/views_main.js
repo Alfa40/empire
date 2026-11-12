@@ -114,7 +114,7 @@ function bizTiles(withNew = true) {
     const T = bizType(b);
     const r30 = recentDaily(30, b.id);
     const st = b.status === 'setup' ? 'bad' : bizStatus(b);
-    return `<button class="tile big st-${st}" data-a="bizSheet" data-id="${b.id}"><span class="ic">${T.icon}</span><b>${esc(b.name)}</b><span class="m">${b.status === 'setup' ? 'da completare' : `<span class="${cls(r30.profit)}">${eur0(r30.profit)}</span> · 30 gg`}</span></button>`;
+    return `<button class="tile big st-${st}" data-a="bizSheet" data-id="${b.id}"><span class="ic pic">${bizPic(b, 48)}</span><b>${esc(b.name)}</b><span class="m">${b.status === 'setup' ? 'da completare' : `<span class="${cls(r30.profit)}">${eur0(r30.profit)}</span> · 30 gg`}</span></button>`;
   });
   if (withNew) tiles.push(`<button class="tile big st-new" data-a="openWizard"${tutorialHl('openWizard') ? ' style="outline:3px dashed var(--yellow)"' : ''}><span class="ic">${S.biz.length ? '➕' : '🚀'}</span><b>${S.biz.length ? 'Nuova' : 'Apri la prima attività'}</b><span class="m">attività</span></button>`);
   return `<div class="tiles">${tiles.join('')}</div>`;

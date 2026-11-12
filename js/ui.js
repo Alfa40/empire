@@ -189,7 +189,7 @@ function modalEvent(ev) {
   const b = ev.biz && ev.biz !== 'hq' ? getBiz(ev.biz) : null;
   return `<div class="modal" role="dialog" aria-modal="true">
     <div class="mh"><h2>${esc(ev.title)}</h2>${S.events.length > 1 ? badge(`+${S.events.length - 1}`, 'y') : ''}</div>
-    <div class="mb"><small class="muted">${fmtDateShort(ev.day)}${b ? ' · ' + esc(b.name) : ''}</small><p>${esc(ev.text)}</p></div>
+    <div class="mb">${eventPic(ev, b)}<small class="muted">${fmtDateShort(ev.day)}${b ? ' · ' + esc(b.name) : ''}</small><p>${esc(ev.text)}</p></div>
     <div class="opts">${ev.opts.map((o, i) => btn(esc(o), 'evChoose', { i }, i === 0 ? 'pri' : '')).join('')}</div>
   </div>`;
 }

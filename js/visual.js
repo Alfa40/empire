@@ -45,7 +45,7 @@ function bizHero(b) {
   const sub = T.mode === 'shop' && b.status !== 'setup' ? stars(b.rep) : '';
   const ser = profitSeries(b);
   return `<section class="bhero c-${bizColor(b)}"><div class="awn" aria-hidden="true"></div>
-    <div class="hrow"><span class="hico">${T.icon}</span><div class="hn"><h1>${esc(b.name)}</h1><small>${sub}</small></div></div>
+    <div class="hrow"><span class="hico pic">${bizPic(b, 56)}</span><div class="hn"><h1>${esc(b.name)}</h1><small>${sub}</small></div></div>
     ${bizSentence(b) ? `<p class="say">${bizSentence(b)}</p>` : ''}
     ${ser.length >= 2 ? `<div class="hstat"><b class="${cls(r.profit)}">${eur0(r.profit)} <small>30 gg</small></b>${spark(ser, 150, 38)}</div>` : ''}</section>`;
 }

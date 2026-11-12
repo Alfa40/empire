@@ -54,7 +54,7 @@ function bizHubTiles(b, fromSheet) {
     if (st === 'bad' && flag !== 'r') { const a = adv.find(x => x.lv !== 'b' && x.area.includes(id)); if (a) m = esc(a.t); }
     const dis = tut && tut.tabs && !tut.tabs.includes(id);
     const hl = tut && tut.tab === id;
-    return `<button class="tile st-${st} c-${col} ${hl ? 'hl' : ''}" data-a="${fromSheet ? 'openBiz' : 'tab'}" data-id="${b.id}" data-t="${id}" data-tab="${id}"${dis ? ' disabled' : ''}><span class="ic">${ic}</span><b>${label}</b>${st === 'bad' ? `<span class="m">${m}</span>` : ''}</button>`;
+    return `<button class="tile st-${st} c-${col} ${hl ? 'hl' : ''}" data-a="${fromSheet ? 'openBiz' : 'tab'}" data-id="${b.id}" data-t="${id}" data-tab="${id}"${dis ? ' disabled' : ''}>${(p => p ? `<span class="ic pic">${p}</span>` : `<span class="ic">${ic}</span>`)(areaPic(b, id))}<b>${label}</b>${st === 'bad' ? `<span class="m">${m}</span>` : ''}</button>`;
   }).join('')}${moreTile}</div>`;
 }
 function bizPills(b) {
@@ -135,7 +135,7 @@ BIZ_TABS.turni = (b, T) => {
   const fh = {}; if (fc) for (const x of fc.hours) fh[x.h] = x;
   if (fc) est = h => fh[h] ? fh[h].d : 0;
   const head = `<tr><th class="nm">${WEEKDAYS[wd]}</th>${hours.map(h => `<th>${h}</th>`).join('')}</tr>`;
-  const rows = emps.map(e => `<tr><td class="nm ${e.fatigue > 70 ? 'bad' : ''}"><b>${esc(e.first)}</b><small>${esc(ROLES[e.role].name)} · ${e.wdays[wd] ? shiftLabel(e, wd) : 'riposo'}${e.fatigue > 70 ? ' · <span class="neg">stanco ' + Math.round(e.fatigue) + '%</span>' : ''}${lawIssues(e).length ? ' · <span class="neg">' + lawIssues(e).join(', ') + '</span>' : ''}</small></td>${hours.map(h => {
+  const rows = emps.map(e => `<tr><td class="nm ${e.fatigue > 70 ? 'bad' : ''}">${face(e, 30)}<b>${esc(e.first)}</b><small>${esc(ROLES[e.role].name)} · ${e.wdays[wd] ? shiftLabel(e, wd) : 'riposo'}${e.fatigue > 70 ? ' · <span class="neg">stanco ' + Math.round(e.fatigue) + '%</span>' : ''}${lawIssues(e).length ? ' · <span class="neg">' + lawIssues(e).join(', ') + '</span>' : ''}</small></td>${hours.map(h => {
     const on = e.wdays[wd] && onShift(e, h, wd);
     return `<td class="cell ${on ? 'on' : ''} ${!e.wdays[wd] ? 'off' : isOpen(h) ? 'open' : ''}"><button data-a="shiftAt" data-e="${e.id}" data-h="${h}" aria-label="${esc(e.first)} dalle ${h}"></button></td>`;
   }).join('')}</tr>`).join('');
@@ -145,7 +145,7 @@ BIZ_TABS.turni = (b, T) => {
     ? `<div class="fc bad"><b>Previsione ${WEEKDAYS[wd]} ${fmtDateShort(fc.day).slice(0, 5)}: −${num(fc.lost)} clienti</b>${fc.probs.map(g => `<div class="kvl"><span class="kvn">${hoursRanges(g.h)}<small>${esc(probText(g))}</small></span><b class="neg">−${num(g.lost)}</b>${g.lim !== 'nessuno' ? btn('+ Assumi ' + ROLES[g.lim].name, 'hireOpen', { target: b.id, role: g.lim }, 'sm') : ''}</div>`).join('')}<small class="muted">Sposta o allunga i turni di chi fa quel lavoro, oppure assumi.</small></div>`
     : `<div class="fc ok"><b>Previsione ${WEEKDAYS[wd]} ${fmtDateShort(fc.day).slice(0, 5)}: ${num(fc.served)} clienti, tutti serviti</b></div>`) : '';
   const demRow = est ? `<tr class="dem"><td class="nm">Clienti attesi</td>${hours.map(h => `<td>${est(h) >= 0.5 ? num(est(h)) : ''}</td>`).join('')}</tr>` : '';
-  const ctrl = emps.map(e => tr([`<b>${esc(e.first)}</b> <small>${esc(ROLES[e.role].name)}</small>`, dayToggles('empDay', e.wdays, { e: e.id }), stepper('empStart', { e: e.id }, e.starts && e.starts.some((x, i) => e.wdays[i] && x != null && x !== e.start) ? 'variabile' : String(e.start || 0).padStart(2, '0') + ':00'), stepper('empHrs', { e: e.id }, e.hours + ' h'), [`${weeklyHours(e)} h${weeklyHours(e) > 40 ? ' ' + badge('straord.', 'y') : ''}`, 'n']]));
+  const ctrl = emps.map(e => tr([`<span class="pic-h">${face(e, 34)}<span><b>${esc(e.first)}</b><small>${esc(ROLES[e.role].name)}</small></span></span>`, dayToggles('empDay', e.wdays, { e: e.id }), stepper('empStart', { e: e.id }, e.starts && e.starts.some((x, i) => e.wdays[i] && x != null && x !== e.start) ? 'variabile' : String(e.start || 0).padStart(2, '0') + ':00'), stepper('empHrs', { e: e.id }, e.hours + ' h'), [`${weeklyHours(e)} h${weeklyHours(e) > 40 ? ' ' + badge('straord.', 'y') : ''}`, 'n']]));
   return sec('Turni', 'turni', `<div class="seg mb">${WEEKDAYS_SHORT.map((w, i) => btn(w + (b.days[i] ? '' : ' ✕'), 'tday', { d: i }, 'sm ' + (wd === i ? 'on ' : '') + (dayBad(b, i) ? 'bad' : b.days[i] ? 'good' : ''))).join('')}</div>
       ${emps.length ? `<div class="shift-wrap"><table class="shifts"><thead>${head}</thead><tbody>${rows}${covRow}${demRow}</tbody></table></div>
       <div class="legend"><span><i style="background:var(--accent)"></i>in turno</span><span><i style="background:var(--panel2)"></i>aperto</span><span><i style="background:var(--red-bg)"></i>personale insufficiente</span><span>tocca = inizio turno</span></div>` : `<p class="muted">Nessun dipendente.</p>`}${fcBox}`,
@@ -309,7 +309,7 @@ BIZ_TABS.prodotti = (b, T) => {
     const margin = net > 0 ? (net - cost) / net : 0;
     const ref = refPrice(b, p), r = p.price / ref;
     const eqMissing = t.eq && !b.equip[t.eq];
-    return tr([`<b>${esc(p.name)}</b>${eqMissing ? ' ' + badge('serve attrezzatura', 'r') : ''}`,
+    return tr([`<span class="pic-h">${product(p, 44, eqMissing ? 'bad' : p.on ? 'ok' : 'off')}<b>${esc(p.name)}</b></span>${eqMissing ? ' ' + badge('serve attrezzatura', 'r') : ''}`,
       btn(p.on ? 'ON' : 'OFF', 'prodToggle', { p: p.id }, 'sm ' + (p.on ? 'ok' : '')),
       [numIn('prodPrice', p.price.toFixed(2), { p: p.id }, 'step="0.1" min="0" style="width:5.5rem"'), 'n'],
       [`${eur2(ref)} <small class="${r > 1.15 ? 'neg' : r < 0.85 ? 'warn' : 'pos'}">${r > 1.15 ? '▲' : r < 0.85 ? '▼' : '●'}</small>`, 'n'],
@@ -348,7 +348,7 @@ MODALS.prodEdit = (M) => {
   const avail = T.products.filter(x => !x.lock || hasResearch(x.lock));
   const mats = Object.keys(MATERIALS).filter(m => !p.r[m]);
   const canDel = !M.isNew && b.products.filter(x => x.tpl === p.tpl).length > 1;
-  return sheet(M.isNew ? 'Nuovo prodotto' : 'Prodotto', `
+  return sheet(M.isNew ? 'Nuovo prodotto' : 'Prodotto', `<div class="pic-head">${product(p, 80, p.on === false ? 'off' : 'ok')}<div><b>${esc(p.name)}</b><small class="muted">Costo ${eur2(cost)} · prezzo ${eur2(p.price)}</small></div></div>
     ${M.isNew ? `<label class="field"><span>Categoria</span>${select('peTpl', avail.map(x => [x.id, x.n]), p.tpl)}</label>` : ''}
     ${M.isNew ? '' : `<label class="row mb"><input type="checkbox" data-c="peOn" ${p.on ? 'checked' : ''}> In vendita</label>`}
     <label class="field"><span>Nome</span><input id="pe_name" data-c="peName" value="${esc(p.name)}" maxlength="40"></label>
@@ -369,7 +369,7 @@ BIZ_TABS.produzione = (b, T) => {
   const x = b.today || {};
   const clients = S.biz.filter(o => o.id !== b.id && bizType(o).materials.includes(b.output));
   const u = MATERIALS[b.output].unit;
-  return sec('Produzione', 'produzione', `<div class="seg mb">${Object.keys(T.outputs).map(o => btn(esc(MATERIALS[o].name), 'prodOutput', { v: o }, 'sm ' + (b.output === o ? 'on' : ''))).join('')}</div>
+  return sec('Produzione', 'produzione', `<div class="pic-head">${material(b.output, 72)}<div><b>${esc(MATERIALS[b.output].name)}</b><small class="muted">${num(stockOf(b, b.output))} ${u} in magazzino</small></div></div><div class="seg mb">${Object.keys(T.outputs).map(o => btn(esc(MATERIALS[o].name), 'prodOutput', { v: o }, 'sm ' + (b.output === o ? 'on' : ''))).join('')}</div>
       <div class="kpis">${kpi('Personale', num(x.capLabor || estimateProduction(b)) + '/g')}${kpi('Macchine', num(machineCap(b, mods)) + '/g')}${kpi('Oggi', num1(x.produced || 0) + ' ' + u)}${kpi('Costo unit.', b.unitCost ? eur2(b.unitCost) : '–')}</div>
       <small class="muted">1 ${u} = ${Object.entries(out.in).map(([m, qq]) => qty(qq) + ' ' + MATERIALS[m].unit + ' ' + MATERIALS[m].name).join(' + ')}</small>
       <label class="field mt"><span>Obiettivo/giorno (0 = max)</span>${numIn('prodTarget', b.prodTarget || 0, {}, 'min="0" step="10"')}</label>`)

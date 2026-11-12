@@ -500,7 +500,7 @@ function matDraw(k, c) {
 /** immagine di un materiale; st = 'ok' | 'low' | 'out' */
 function material(id, size = 40, st = 'ok') {
   const [k, c] = MAT_SHAPE[id] || ['box', '#999'];
-  const ring = st === 'ok' ? 'var(--green)' : st === 'out' ? 'var(--red)' : st === 'low' ? 'var(--red)' : 'var(--line2)';
+  const ring = st === 'ok' ? 'var(--green)' : st === 'out' || st === 'low' ? 'var(--red)' : 'var(--line2)';
   let s = matDraw(k, c);
   if (st === 'out') s = `<g opacity=".35" style="filter:grayscale(1)">${s}</g>`;
   return `<svg class="mat" viewBox="0 0 64 64" width="${size}" height="${size}" role="img" aria-label="${esc((MATERIALS[id] || {}).name || id)}"><rect x="1" y="1" width="62" height="62" rx="13" fill="var(--panel2)"/><rect x="1" y="1" width="62" height="40" rx="13" fill="${U('bg')}" opacity=".5"/>${s}<rect x="1" y="1" width="62" height="62" rx="13" fill="none" stroke="${ring}" stroke-width="2.2"/></svg>`;

@@ -45,13 +45,13 @@ function ovAreas(b) {
       const tp = tplOf(b, p), r = p.price / refPrice(b, p);
       const bad = p.on && (r > 1.2 || (tp.eq && !b.equip[tp.eq]));
       if (bad) nb++;
-      return ovChip(esc(p.name), p.on ? eur2(p.price) : 'spento', bad ? 'bad' : p.on ? 'ok' : 'off', 'ov', it('prodEdit', { p: p.id }));
+      return ovChip(esc(p.name), p.on ? eur2(p.price) : 'spento', bad ? 'bad' : p.on ? 'ok' : 'off', 'ov', it('prodEdit', { p: p.id }), product(p, 40, bad ? 'bad' : p.on ? 'ok' : 'off'));
     }).join('') + ovChip('+ Nuovo', '', 'add', 'ov', it('prodNew'));
     out.push({ id: 'prodotti', ic: '🏷️', title: 'Prezzi', sum: nb ? `${nb} da vedere` : `${b.products.filter(p => p.on).length} attivi`, bad: nb > 0, chips: prc });
   } else {
     const ws = b.wholesale || {};
     const u = MATERIALS[b.output].unit;
-    const pr = ovChip(esc(MATERIALS[b.output].name), `${num(stockOf(b, b.output))} ${u}`, t.full ? 'bad' : 'ok', 'openBiz', { id: b.id, tab: 'produzione' })
+    const pr = ovChip(esc(MATERIALS[b.output].name), `${num(stockOf(b, b.output))} ${u}`, t.full ? 'bad' : 'ok', 'openBiz', { id: b.id, tab: 'produzione' }, material(b.output, 40, t.full ? 'low' : 'ok'))
       + ovChip('Ingrosso', ws.on ? (ws.price ? eur2(ws.price) : 'mercato') : 'spento', ws.on ? 'ok' : 'off', 'openBiz', { id: b.id, tab: 'produzione' });
     out.push({ id: 'produzione', ic: '🏭', title: 'Produzione', sum: t.full ? 'magazzino pieno' : `${num1((b.hist[b.hist.length - 1] || {}).prod || 0)} ${u}`, bad: !!t.full, chips: pr });
   }
@@ -84,9 +84,9 @@ function ovBiz(b) {
   const st = b.status === 'setup' ? 'bad' : bizStatus(b);
   const r30 = recentDaily(30, b.id);
   const AC = { turni: 'orange', personale: 'orange', prodotti: 'purple', produzione: 'teal', magazzino: 'teal', attrezzature: 'teal' };
-  const tiles = ovAreas(b).map(x => `<button class="ovt c-${AC[x.id] || 'blue'} ${x.bad ? 'bad' : 'ok'}" data-a="ovArea" data-b="${b.id}" data-t="${x.id}"><span class="ic">${x.ic}</span><b>${x.title}</b>${x.bad ? `<small>${x.sum}</small>` : ''}</button>`).join('');
+  const tiles = ovAreas(b).map(x => Object.assign(x, { pic: areaPic(b, x.id) })).map(x => `<button class="ovt c-${AC[x.id] || 'blue'} ${x.bad ? 'bad' : 'ok'}" data-a="ovArea" data-b="${b.id}" data-t="${x.id}"><span class="ic${x.pic ? ' pic' : ''}">${x.pic || x.ic}</span><b>${x.title}</b>${x.bad ? `<small>${x.sum}</small>` : ''}</button>`).join('');
   const sub = b.status === 'setup' ? 'da completare' : b.status === 'paused' ? 'sospesa' : `<span class="${cls(r30.profit)}">${eur0(r30.profit)}</span>`;
-  return `<section class="ovb st-${st}"><button class="ovb-t" data-a="openBiz" data-id="${b.id}" data-tab="riepilogo"><span class="bi c-${bizColor(b)}">${T.icon}</span><span class="nm"><b>${esc(b.name)}</b><small>${sub}</small></span>${b.hist.length >= 2 ? spark(profitSeries(b), 84, 28) : ''}<i>›</i></button><div class="ovts">${tiles}</div></section>`;
+  return `<section class="ovb st-${st}"><button class="ovb-t" data-a="openBiz" data-id="${b.id}" data-tab="riepilogo"><span class="bi c-${bizColor(b)} pic">${bizPic(b, 44)}</span><span class="nm"><b>${esc(b.name)}</b><small>${sub}</small></span>${b.hist.length >= 2 ? spark(profitSeries(b), 84, 28) : ''}<i>›</i></button><div class="ovts">${tiles}</div></section>`;
 }
 
 function ovGroup() {
@@ -137,3 +137,24 @@ MODALS.eq = (M) => {
     <h4>${own ? 'Cambia' : 'Compra'}</h4><div class="row">${buys.join('') || '<small class="muted">Già al massimo</small>'}</div>`,
     (own && (own.cond < 80 || own.broken) ? btn(`Ripara · ${eur0(repairCost(b, e.cat) * 1.22)}`, 'eqRepair', { c: e.cat }, 'ok') : '') + btn('OK', 'closeModal', {}, 'pri'), { help: 'attrezzature' });
 };
+
+/** disegno rappresentativo di un'area dell'attività */
+function areaPic(b, id) {
+  const T = bizType(b);
+  if (id === 'personale') { const E = empsOf(b.id); return E.length ? face(E.find(empBad) || E[0], 40) : ''; }
+  if (id === 'prodotti' && b.products.length) { const bad = b.products.find(p => p.on && p.price / refPrice(b, p) > 1.2); return product(bad || b.products.find(p => p.on) || b.products[0], 40, bad ? 'bad' : 'ok'); }
+  if (id === 'magazzino') {
+    const ms = bizMaterials(b).filter(x => !(T.mode === 'production' && x === b.output));
+    if (!ms.length) return '';
+    const dl = m => { const u = avgUsage(b, m), st = stockOf(b, m); return u > 0 ? st / u : st > 0 ? 99 : 0; };
+    const m = ms.slice().sort((x, y) => dl(x) - dl(y))[0];
+    return material(m, 40, dl(m) < 1 ? 'low' : 'ok');
+  }
+  if (id === 'produzione' && b.output) return material(b.output, 40);
+  if (id === 'attrezzature') {
+    const sc = q => { const o = b.equip[q.cat]; return !o ? (q.req ? -1 : 200) : o.broken ? -2 : o.cond; };
+    const e = T.equip.slice().sort((x, y) => sc(x) - sc(y))[0];
+    return e ? machine(e, b.equip[e.cat] || null, 40) : '';
+  }
+  return '';
+}

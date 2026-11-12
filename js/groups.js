@@ -74,7 +74,7 @@ VIEWS.staff = () => {
   const sad = all.filter(empBad).length;
   const tiles = staffGroups().filter(g => g.emps.length).map(g => {
     const bad = g.emps.filter(empBad).length;
-    return `<button class="ovt ${bad ? 'bad' : 'ok'}" data-a="staffGroup" data-g="${g.id}"><span class="ic">${g.ic}</span><b>${g.n} <span class="cnt">${g.emps.length}</span></b>${bad ? `<small>${bad} da vedere</small>` : ''}</button>`;
+    return `<button class="ovt ${bad ? 'bad' : 'ok'}" data-a="staffGroup" data-g="${g.id}"><span class="ic pic">${face(g.emps.find(empBad) || g.emps[0], 44)}</span><b>${g.n} <span class="cnt">${g.emps.length}</span></b>${bad ? `<small>${bad} da vedere</small>` : ''}</button>`;
   }).join('');
   return `<div class="ov-head"><h1>Personale</h1>${hb('ruoli')}</div>
     ${staffSentence(all)}
