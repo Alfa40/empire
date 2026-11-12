@@ -7,8 +7,9 @@
    ============================================================ */
 
 /** riquadro piccolo: st = ok | bad | off | add */
-function ovChip(label, val, st, act, data) {
-  return `<button class="ovc ov-${st}"${attrs(Object.assign({ a: act }, data))}><span class="l">${label}</span>${val != null && val !== '' ? `<b>${val}</b>` : ''}</button>`;
+function ovChip(label, val, st, act, data, img) {
+  const tx = `<span class="l">${label}</span>${val != null && val !== '' ? `<b>${val}</b>` : ''}`;
+  return `<button class="ovc ov-${st}${img ? ' has-img' : ''}"${attrs(Object.assign({ a: act }, data))}>${img ? `${img}<span class="tx">${tx}</span>` : tx}</button>`;
 }
 const pad2 = h => String(h).padStart(2, '0');
 
@@ -34,7 +35,7 @@ function ovAreas(b) {
   const pc = byRole(emps, e => e.role).map(g => `<h4 class="rh">${esc(roleName(g.r))} <small class="muted">${g.items.length}</small></h4>` + g.items.map(e => {
     const st = empStatus(e), away = st !== 'Attivo';
     const val = away ? st.toLowerCase() : empBad(e) ? empWhy(e) : e.wdays[wdNext] ? `${pad2(startOn(e, wdNext))}–${pad2(Math.min(24, startOn(e, wdNext) + e.hours))}` : 'riposo';
-    return ovChip(esc(e.first + ' ' + e.last[0] + '.'), val, empBad(e) ? 'bad' : away || !e.wdays[wdNext] ? 'off' : 'ok', 'ov', it('empSheet', { e: e.id }));
+    return ovChip(esc(e.first + ' ' + e.last[0] + '.'), val, empBad(e) ? 'bad' : away || !e.wdays[wdNext] ? 'off' : 'ok', 'ov', it('empSheet', { e: e.id }), face(e, 34));
   }).join('')).join('') + ovChip('+ Assumi', '', 'add', 'ov', it('hireOpen', { target: b.id }));
   out.push({ id: 'personale', ic: '👥', title: 'Persone', sum: !emps.length ? 'nessuno' : nBad ? `${nBad} da vedere` : `${emps.length} ok`, bad: !emps.length || nBad > 0, chips: pc, note: `Orari di domani · ${WEEKDAYS[wdNext]}` });
   // prezzi / produzione
@@ -69,10 +70,10 @@ function ovAreas(b) {
   let eb = 0;
   const ec = T.equip.map(e => {
     const own = b.equip[e.cat];
-    if (!own && !e.req) return ovChip(esc(e.n), 'opzionale', 'off', 'ov', it('eqSheet', { c: e.cat }));
+    if (!own && !e.req) return ovChip(esc(e.n), 'opzionale', 'off', 'ov', it('eqSheet', { c: e.cat }), machine(e, null, 34));
     const bad = !own || own.broken || own.cond < 50;
     if (bad) eb++;
-    return ovChip(esc(e.n), !own ? 'manca' : own.broken ? 'guasta' : Math.round(own.cond) + '%', bad ? 'bad' : 'ok', 'ov', it('eqSheet', { c: e.cat }));
+    return ovChip(esc(e.n), !own ? 'manca' : own.broken ? 'guasta' : Math.round(own.cond) + '%', bad ? 'bad' : 'ok', 'ov', it('eqSheet', { c: e.cat }), machine(e, own, 34));
   }).join('');
   out.push({ id: 'attrezzature', ic: '🛠️', title: 'Macchine', sum: eb ? `${eb} da vedere` : 'ok', bad: eb > 0, chips: ec });
   return out;
@@ -130,7 +131,7 @@ MODALS.eq = (M) => {
   const e = equipDef(b, M.c); if (!e) return '';
   const own = b.equip[e.cat];
   const buys = [0, 1, 2].filter(i => !own || i > own.tier || own.broken).map(i => btn(`${TIER_NAMES[i].split(' ')[0]} · ${eur0(equipCost(e, i) * 1.22)}`, 'eqBuy', { c: e.cat, t: i }, 'sm' + (!own && i === 0 ? ' pri' : '')));
-  return sheet(esc(e.n), `<div class="kpis">${kpi('Effetto', EQ_KIND[e.kind])}${kpi('Livello', own ? TIER_NAMES[own.tier].split(' ')[0] : '—', '', own ? '' : 'neg')}${own ? kpi('Stato', Math.round(own.cond) + '%', own.broken ? 'guasta' : '', own.broken || own.cond < 50 ? 'neg' : '') : ''}</div>
+  return sheet(esc(e.n), `<div class="pic-head">${machine(e, own, 96)}<div><b>${machineWord(own)}</b>${own && !own.broken ? `<div class="cbar"><i style="width:${Math.round(own.cond)}%" class="${own.broken || own.cond < 50 ? 'r' : 'g'}"></i></div>` : ''}${own ? '<small class="muted">' + (own.broken ? 'Ferma: va riparata o sostituita.' : Math.round(own.cond) + '% · si consuma usandola: riparare costa meno che ricomprare.') + '</small>' : ''}</div></div><div class="kpis">${kpi('Effetto', EQ_KIND[e.kind])}${kpi('Livello', own ? TIER_NAMES[own.tier].split(' ')[0] : '—', '', own ? '' : 'neg')}</div>
     ${e.req ? `<div class="row mb">${badge('Obbligatoria', 'y')}</div>` : ''}
     <label class="row mb"><input type="checkbox" data-c="eqLeasing" ${UI.leasing ? 'checked' : ''}> Leasing</label>
     <h4>${own ? 'Cambia' : 'Compra'}</h4><div class="row">${buys.join('') || '<small class="muted">Già al massimo</small>'}</div>`,

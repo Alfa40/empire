@@ -197,7 +197,7 @@ MODALS.emp = (m) => {
     <h4>Formazione ${hb('formazione')}</h4><div class="seg">${COURSES.map(c => btn(`${c.n} · ${eur0(c.cost * (hasResearch('formazione') ? 0.7 : 1) * 1.22)}`, 'empTrain', { e: e.id, c: c.id }, 'sm', e.skill >= c.max || (c.min && e.skill < c.min) || e.trainUntil > S.day)).join('')}</div>
     ${careerBox(e)}
     ${others.length ? `<h4>Trasferisci</h4>${select('empMove', [['', '—'], ...others.map(o => [o.id, o.name])], '', { e: e.id })}` : ''}`;
-  return sheet(`${esc(empName(e))} <small class="muted">${esc(ROLES[e.role].name)}</small>`, `<div class="ovcs mb">${stat('Competenza', Math.round(e.skill), false, 'competenza')}${stat('Morale', Math.round(e.morale), e.morale < 40, 'morale')}${stat('Stanchezza', Math.round(e.fatigue), e.fatigue > 70, 'stanchezza')}</div>
+  return sheet(`${esc(empName(e))} <small class="muted">${esc(ROLES[e.role].name)}</small>`, `<div class="pic-head">${face(e, 88)}<div><b>${MOOD_WORD[faceMood(e)]}</b><small class="muted">${moodHint(e)}</small></div></div><div class="ovcs mb">${stat('Competenza', Math.round(e.skill), false, 'competenza')}${stat('Morale', Math.round(e.morale), e.morale < 40, 'morale')}${stat('Stanchezza', Math.round(e.fatigue), e.fatigue > 70, 'stanchezza')}</div>
     <div class="seg mb">${tabs.map(([k, l]) => btn(l, 'empTab', { t: k }, 'sm ' + (tab === k ? 'on' : ''))).join('')}</div>${body}`,
     tab === 'altro' ? btn('Ferie 7 gg', 'empHoliday', { e: e.id }, '', e.holidays < 5 || empStatus(e) !== 'Attivo') + btn('Licenzia', 'empFire', { e: e.id }, 'danger') : btn('OK', 'closeModal', {}, 'pri'));
 };
@@ -274,7 +274,7 @@ MODALS.hire = () => {
     const o = H.offer;
     const cost = empMonthlyCost({ wage: o.wage, hours: o.hours, wdays: o.wdays });
     const contracts = Object.entries(CONTRACTS).filter(([k]) => k !== 'apprendistato' || c.age <= 29);
-    return sheet(`Offerta · ${esc(c.first)}`, `<div class="row mb">${badge(ROLES[c.role].name, 'b')} ${badge('competenza ' + Math.round(c.skill))} ${badge('chiede ' + eur0(c.expected), 'y')}</div>
+    return sheet(`Offerta · ${esc(c.first)}`, `<div class="row mb">${face(c, 56, 'ok')}${badge(ROLES[c.role].name, 'b')} ${badge('competenza ' + Math.round(c.skill))} ${badge('chiede ' + eur0(c.expected), 'y')}</div>
       <label class="field"><span>Contratto ${hb('contratto')}</span>${select('offerContract', contracts, o.contract)}</label>
       ${o.contract === 'determinato' || o.contract === 'stagionale' ? `<label class="field"><span>Durata</span>${select('offerMonths', [3, 6, 12, 24].map(m => [m, m + ' mesi']), o.months)}</label>` : ''}
       <label class="field"><span>Stipendio lordo ${hb('stipendio')}</span>${numIn('offerWage', o.wage, {}, 'step="10"')}</label>
@@ -290,7 +290,7 @@ MODALS.hire = () => {
       ${b ? '' : select('hireCity', CITIES.map(x => [x.id, x.name]), H.city)}
       ${select('hireRole', [['', 'Tutti i ruoli'], ...roles.map(r => [r, ROLES[r].name])], H.role)}
       ${btn('📣 Annuncio 183 €', 'hireAd', {}, 'sm', !H.role)}</div>
-    ${list.length ? roleSections(list, x => x.role, x => `<button class="card" data-a="hireCand" data-c="${x.id}"><h4>${esc(x.first + ' ' + x.last)}</h4>
+    ${list.length ? roleSections(list, x => x.role, x => `<button class="card" data-a="hireCand" data-c="${x.id}"><h4 class="pic-h">${face(x, 42, 'ok')}<span>${esc(x.first + ' ' + x.last)}</span></h4>
       <div class="kv">${esc(ROLES[x.role].name)} <b>${x.age} anni</b></div><div class="kv">Competenza <b>${skillBadge(x.skill)}</b></div>
       <div class="kv">Chiede <b>${eur0(x.expected)}</b></div>${x.traits.length ? `<small>${x.traits.map(t => esc(TRAITS[t].n)).join(' · ')}</small>` : ''}</button>`, s => `<div class="cards">${s}</div>`) : '<p class="muted">Nessuno: pubblica un annuncio.</p>'}`,
     '', { wide: true, help: isHq ? 'sede' : 'candidati' });
@@ -455,10 +455,10 @@ BIZ_TABS.attrezzature = (b, T) => {
     const own = b.equip[e.cat];
     const buys = [0, 1, 2].filter(i => !own || i > own.tier || own.broken).map(i => btn(`${TIER_NAMES[i].split(' ')[0]} ${eur0(equipCost(e, i) * 1.22)}`, 'eqBuy', { c: e.cat, t: i }, 'sm' + (i === 0 && !own && e.req && tutorialHl('equip') ? ' hl pri' : '')));
     const bad = (e.req && !own) || (own && (own.broken || own.cond < 50));
-    return `<div class="card ${bad ? 'bad' : own ? 'good' : ''}" style="cursor:default"><div class="top-row"><h4>${esc(e.n)}</h4>${e.req ? badge('Obbligatoria', 'y') : ''}</div>
+    return `<div class="card ${bad ? 'bad' : own ? 'good' : ''}" style="cursor:default"><div class="top-row"><h4 class="pic-h">${machine(e, own, 56)}<span>${esc(e.n)}<small class="muted">${machineWord(own)}</small></span></h4>${e.req ? badge('Obbligatoria', 'y') : ''}</div>
       <div class="kv">Effetto <b>${EQ_KIND[e.kind]}</b></div>
       <div class="kv">Attuale <b>${own ? TIER_NAMES[own.tier] + (own.broken ? ' ' + badge('guasta', 'r') : '') : '—'}</b></div>
-      ${own ? `<div class="kv">Stato <b>${bar(own.cond)} ${Math.round(own.cond)}%</b></div>` : ''}
+      ${own && !own.broken ? `<div class="kv">Stato <b>${bar(own.cond)} ${Math.round(own.cond)}%</b></div>` : ''}
       <div class="row mt">${buys.join('')}${own && (own.cond < 80 || own.broken) ? btn(`Ripara ${eur0(repairCost(b, e.cat) * 1.22)}`, 'eqRepair', { c: e.cat }, 'sm ok') : ''}</div></div>`;
   });
   return sec('Attrezzature', 'attrezzature', `<label class="row mb"><input type="checkbox" data-c="eqLeasing" ${UI.leasing ? 'checked' : ''}> Leasing</label><div class="cards">${cards.join('')}</div>`);

@@ -306,7 +306,7 @@ ACT.recentDel = (d) => { S.recent = (S.recent || []).filter(r => r.k !== d.k); r
 // ---------- "scontrino" dei costi: ogni voce con la sua spiegazione e il totale ----------
 // secs: [{t, ic, c (colore), rows: [{n, v, d, plus}], tot}]  ·  sum: [[label, valore, classe]]
 function bill(secs, sumRows) {
-  const rows = (r) => `<div class="bl${r.plus ? ' plus' : ''}"><span class="bn">${r.n}${r.d ? `<small>${r.d}</small>` : ''}</span><b>${r.plus ? '−' : ''}${eur0(r.v)}</b></div>`;
+  const rows = (r) => `<div class="bl${r.plus ? ' plus' : ''}">${r.img ? `<span class="bimg">${r.img}</span>` : ''}<span class="bn">${r.n}${r.d ? `<small>${r.d}</small>` : ''}</span><b>${r.plus ? '−' : ''}${eur0(r.v)}</b></div>`;
   return `<div class="bill">${secs.filter(s => s && s.rows.length).map(s => `<div class="bsec ${s.c || ''}"><h4>${s.ic ? s.ic + ' ' : ''}${s.t}</h4>${s.rows.map(rows).join('')}
     <div class="bl tot"><span class="bn">${s.tot || 'Totale'}</span><b>${eur0(s.total != null ? s.total : sum(s.rows, r => r.plus ? -r.v : r.v))}</b></div></div>`).join('')}
     ${sumRows && sumRows.length ? `<div class="bsec bsum">${sumRows.map(([n, v, k]) => `<div class="bl ${k || ''}"><span class="bn">${n}</span><b>${v}</b></div>`).join('')}</div>` : ''}</div>`;

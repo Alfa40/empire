@@ -190,3 +190,20 @@ h3.sh { margin: 1rem 0 .2rem; font-size: 1rem; }
 .bl.tot b { font-size: 1.05rem; }
 .bl.g b { color: var(--green); } .bl.r b { color: var(--red); }
 .bl.big b { font-size: 1.15rem; }
+
+/* illustrazioni */
+svg.face, svg.mach { flex: none; display: block; }
+.ovc.has-img { flex-direction: row; align-items: center; gap: .45rem; padding: .25rem .6rem .25rem .3rem; }
+.ovc.has-img .tx { display: flex; flex-direction: column; min-width: 0; }
+.pic-head { display: flex; align-items: center; gap: .8rem; margin-bottom: .6rem; }
+.pic-head > div { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.pic-head b { font-size: 1.05rem; text-transform: capitalize; }
+.pic-h { display: flex; align-items: center; gap: .55rem; }
+.pic-h > span { display: flex; flex-direction: column; min-width: 0; }
+.pic-h small { font-weight: 600; font-size: .78rem; }
+.cbar { height: 8px; width: 9rem; max-width: 100%; border-radius: 4px; background: var(--line); overflow: hidden; }
+.cbar i { display: block; height: 100%; }
+.cbar i.g { background: var(--green); } .cbar i.r { background: var(--red); }
+.bl .bimg { flex: none; align-self: center; }
+.bl:has(.bimg) { justify-content: flex-start; }
+.bl:has(.bimg) b { margin-left: auto; }
