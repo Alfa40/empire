@@ -251,6 +251,8 @@ function simShop(b, info, mods, staffToday) {
   for (const x of sales) { gross += x.g; R.revNet += income(x.g, x.iva, 'vendite', b.id, x.n); }
   R.gross = gross;
   if (mods.commission && gross > 0) expense(gross * mods.commission / 1.22, 0.22, 'commissioni', b.id, 'Commissioni sugli incassi');
+  // portali di prenotazione (hotel): trattengono una percentuale su ogni camera venduta
+  if (T.portal && gross > 0) expense(gross * T.portal / (1 + T.iva), 0.22, 'commissioni', b.id, 'Portali di prenotazione');
   R.use = use; R.stockouts = stockouts;
   S.counters.sold += unitsSold;
 

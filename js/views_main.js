@@ -229,6 +229,7 @@ function openBill(typeId, cityId, L, p, oc) {
   mon.push({ n: 'Luce, gas e acqua', d: 'Stima: più m² e più macchine = bollette più alte.', v: en });
   const roles = [...new Set([T.roles[0], T.front].filter(Boolean))];
   for (const r of roles) mon.push({ n: 'Stipendio: 1 ' + ROLES[r].name, d: 'Paga lorda + contributi INPS (circa +30%). Servono più persone per coprire tutti i turni.', v: marketWage(r, cityId, 50) * 1.3 });
+  if (T.portal) mon.push({ n: 'Portali di prenotazione', d: 'Il sito dove i clienti prenotano trattiene il ' + Math.round(T.portal * 100) + '% di ogni camera. Stima con 7 camere su 10 occupate.', v: Math.floor(m2 / T.roomM2) * 0.7 * T.products[0].p * 30 * T.portal });
   mon.push({ n: 'Commercialista', d: 'Tiene i conti e fa le dichiarazioni.', v: (S.biz.length ? 55 : 165) * S.eco.priceLevel * 1.22 });
   const tNow = sum(now, r => r.v), tEq = sum(eq, r => r.v), need = tNow + tEq, left = S.cash - need;
   return bill([
