@@ -395,7 +395,7 @@ BIZ_TABS.magazzino = (b, T) => {
     const isOut = T.mode === 'production' && m === b.output;
     const daysLeft = use > 0 ? st / use : null;
     const out = !isOut && ((b.today && (b.today.stockouts || []).length && st <= 0) || (daysLeft != null && daysLeft < 1) || (st <= 0 && !inc));
-    return tr([`<b>${esc(M.name)}</b>${isOut ? ' ' + badge('prodotto', 'b') : ''}`,
+    return tr([`<span class="pic-h">${material(m, 44, out ? 'low' : st <= 0 && !isOut ? 'out' : 'ok')}<b>${esc(M.name)}</b></span>${isOut ? ' ' + badge('prodotto', 'b') : ''}`,
       [`<b class="${st <= 0 && !isOut ? 'neg' : ''}">${num1(st)}</b> ${M.unit}${inc ? ` <small class="muted">+${num1(inc)}</small>` : ''}`, 'n'],
       [daysLeft == null ? '–' : `<span class="${daysLeft < 1.5 ? 'neg' : ''}">${num1(daysLeft)} gg</span>`, 'n'],
       [nextExp ? `<span class="${nextExp - S.day <= 1 ? 'neg' : ''}">${fmtDateShort(nextExp).slice(0, 5)}</span>` : '–', 'n'],
@@ -415,7 +415,7 @@ MODALS.rs = (M) => {
   const sups = [...suppliersFor(m).map(s => [s.id, `${s.tierName} · ${eur2(materialPrice(m, s))}`]), ...internalSuppliers(b, m).map(s => [s.id, `${s.name} · ${eur2(s.unit)}`])];
   const sg = suggestRestock(b, m);
   const st = stockOf(b, m), use = avgUsage(b, m), inc = incoming(b, m);
-  return sheet(esc(MATERIALS[m].name), `<div class="kpis">${kpi('Giacenza', num1(st) + ' ' + MATERIALS[m].unit, '', st <= 0 ? 'neg' : '')}${kpi('Durata', use > 0 ? num1(st / use) + ' gg' : '–', '', use > 0 && st / use < 1.5 ? 'neg' : '')}${kpi('In arrivo', num1(inc))}</div>
+  return sheet(esc(MATERIALS[m].name), `<div class="pic-head">${material(m, 88, st <= 0 ? 'out' : use > 0 && st / use < 1.5 ? 'low' : 'ok')}<div><b>${num1(st)} ${MATERIALS[m].unit}</b><small class="muted">${use > 0 ? 'Ne usi circa ' + num1(use) + ' al giorno.' : ''}</small></div></div><div class="kpis">${kpi('Giacenza', num1(st) + ' ' + MATERIALS[m].unit, '', st <= 0 ? 'neg' : '')}${kpi('Durata', use > 0 ? num1(st / use) + ' gg' : '–', '', use > 0 && st / use < 1.5 ? 'neg' : '')}${kpi('In arrivo', num1(inc))}</div>
     <label class="row mb"><input type="checkbox" data-c="rsOn" data-m="${m}" ${r.on ? 'checked' : ''}> Riordino automatico</label>
     <div class="row"><label class="field"><span>Sotto</span>${numIn('rsMin', r.min, { m })}</label><label class="field"><span>Porta a</span>${numIn('rsTarget', r.target, { m })}</label></div>
     <small class="muted">Consigliato: ${sg.min} → ${sg.target}</small>
@@ -442,7 +442,7 @@ MODALS.order = (M) => {
   for (const s of internalSuppliers(b, m)) sups.push({ id: s.id, name: s.name, tier: 'Interno', q: s.q, days: s.days, rel: 1, unit: s.unit, stock: s.stock });
   const sel = sups.find(s => s.id === M.sup) || sups[1];
   const tot = sel.unit * M.qty * (sel.stock != null ? 1 : 1 + Mt.iva);
-  return sheet(`Ordina ${esc(Mt.name)}`, `<div class="kpis">${kpi('Giacenza', num1(stockOf(b, m)) + ' ' + Mt.unit)}${kpi('Uso/giorno', num1(avgUsage(b, m)))}</div>
+  return sheet(`Ordina ${esc(Mt.name)}`, `<div class="pic-head">${material(m, 64)}</div><div class="kpis">${kpi('Giacenza', num1(stockOf(b, m)) + ' ' + Mt.unit)}${kpi('Uso/giorno', num1(avgUsage(b, m)))}</div>
     <div class="cards">${sups.map(s => `<button class="card ${sel.id === s.id ? 'on' : ''}" data-a="orderSup" data-s="${s.id}"><h4>${esc(s.tier)}</h4><small>${esc(s.name)}</small>
       <div class="kv">Prezzo <b>${eur2(s.unit)}</b></div><div class="kv">Qualità <b>${s.q}</b></div><div class="kv">Arrivo <b>${s.days} gg · ${pct(s.rel)}</b></div>${s.stock != null ? `<div class="kv">Disponibili <b>${num1(s.stock)}</b></div>` : ''}</button>`).join('')}</div>
     <div class="row mt"><label class="field"><span>Quantità (${Mt.unit})</span>${numIn('orderQty', M.qty, {}, 'min="0"')}</label>${btn('½', 'orderQ', { f: 0.5 }, 'sm')}${btn('×2', 'orderQ', { f: 2 }, 'sm')}</div>`,
@@ -455,7 +455,7 @@ BIZ_TABS.attrezzature = (b, T) => {
     const own = b.equip[e.cat];
     const buys = [0, 1, 2].filter(i => !own || i > own.tier || own.broken).map(i => btn(`${TIER_NAMES[i].split(' ')[0]} ${eur0(equipCost(e, i) * 1.22)}`, 'eqBuy', { c: e.cat, t: i }, 'sm' + (i === 0 && !own && e.req && tutorialHl('equip') ? ' hl pri' : '')));
     const bad = (e.req && !own) || (own && (own.broken || own.cond < 50));
-    return `<div class="card ${bad ? 'bad' : own ? 'good' : ''}" style="cursor:default"><div class="top-row"><h4 class="pic-h">${machine(e, own, 56)}<span>${esc(e.n)}<small class="muted">${machineWord(own)}</small></span></h4>${e.req ? badge('Obbligatoria', 'y') : ''}</div>
+    return `<div class="card ${bad ? 'bad' : own ? 'good' : ''}" style="cursor:default"><div class="top-row"><h4 class="pic-h">${machine(e, own, 72)}<span>${esc(e.n)}<small class="muted">${machineWord(own)}</small></span></h4>${e.req ? badge('Obbligatoria', 'y') : ''}</div>
       <div class="kv">Effetto <b>${EQ_KIND[e.kind]}</b></div>
       <div class="kv">Attuale <b>${own ? TIER_NAMES[own.tier] + (own.broken ? ' ' + badge('guasta', 'r') : '') : '—'}</b></div>
       ${own && !own.broken ? `<div class="kv">Stato <b>${bar(own.cond)} ${Math.round(own.cond)}%</b></div>` : ''}

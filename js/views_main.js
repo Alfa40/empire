@@ -220,7 +220,7 @@ function openBill(typeId, cityId, L, p, oc) {
   }
   if (oc.renov) now.push({ n: 'Lavori di sistemazione', d: 'Il locale è da ristrutturare (IVA 10% inclusa).', v: oc.renov * 1.1 });
   const EQD = { speed: 'Serve a lavorare più in fretta.', quality: 'Conserva e presenta bene i prodotti.', phys: 'Posti e comodità per i clienti.', prod: 'Macchina che produce la merce.' };
-  const eq = T.equip.filter(e => e.req).map(e => ({ n: e.n, d: EQD[e.kind] || '', v: equipCost(e, 0) * 1.22, img: machine(e, { tier: 0, cond: 100 }, 36) }));
+  const eq = T.equip.filter(e => e.req).map(e => ({ n: e.n, d: EQD[e.kind] || '', v: equipCost(e, 0) * 1.22, img: machine(e, { tier: 0, cond: 100 }, 44) }));
   const mon = [];
   if (L) mon.push({ n: 'Affitto', d: 'Ogni mese al proprietario.', v: L.rent });
   else if (p) mon.push({ n: 'IMU', d: 'Tassa sull\'immobile tuo, divisa per mese.', v: p.value * 0.0031 * 2 / 12 });

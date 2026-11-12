@@ -67,7 +67,7 @@ function staffSentence(all) {
 function empChip(e) {
   const b = e.biz === 'hq' ? null : getBiz(e.biz);
   const st = empStatus(e), away = st !== 'Attivo';
-  return ovChip(`${esc(e.first)}${S.biz.length > 1 || hqEmps().length ? ` <small>${b ? esc(b.name) : 'Sede'}</small>` : ''}`, away ? st.toLowerCase() : empBad(e) ? empWhy(e) : `${Math.round(e.skill)} · ${eur0(e.wage)}`, empBad(e) ? 'bad' : away ? 'off' : 'ok', 'sub', { x: 'empSheet', e: e.id }, face(e, 34));
+  return ovChip(`${esc(e.first)}${S.biz.length > 1 || hqEmps().length ? ` <small>${b ? esc(b.name) : 'Sede'}</small>` : ''}`, away ? st.toLowerCase() : empBad(e) ? empWhy(e) : `${Math.round(e.skill)} · ${eur0(e.wage)}`, empBad(e) ? 'bad' : away ? 'off' : 'ok', 'sub', { x: 'empSheet', e: e.id }, face(e, 40));
 }
 VIEWS.staff = () => {
   const all = staffList();

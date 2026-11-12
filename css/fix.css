@@ -207,3 +207,7 @@ svg.face, svg.mach { flex: none; display: block; }
 .bl .bimg { flex: none; align-self: center; }
 .bl:has(.bimg) { justify-content: flex-start; }
 .bl:has(.bimg) b { margin-left: auto; }
+
+svg.mat { flex: none; display: block; }
+.pic-head b { text-transform: none; }
+.pic-head b:first-letter { text-transform: uppercase; }

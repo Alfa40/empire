@@ -35,7 +35,7 @@ function ovAreas(b) {
   const pc = byRole(emps, e => e.role).map(g => `<h4 class="rh">${esc(roleName(g.r))} <small class="muted">${g.items.length}</small></h4>` + g.items.map(e => {
     const st = empStatus(e), away = st !== 'Attivo';
     const val = away ? st.toLowerCase() : empBad(e) ? empWhy(e) : e.wdays[wdNext] ? `${pad2(startOn(e, wdNext))}–${pad2(Math.min(24, startOn(e, wdNext) + e.hours))}` : 'riposo';
-    return ovChip(esc(e.first + ' ' + e.last[0] + '.'), val, empBad(e) ? 'bad' : away || !e.wdays[wdNext] ? 'off' : 'ok', 'ov', it('empSheet', { e: e.id }), face(e, 34));
+    return ovChip(esc(e.first + ' ' + e.last[0] + '.'), val, empBad(e) ? 'bad' : away || !e.wdays[wdNext] ? 'off' : 'ok', 'ov', it('empSheet', { e: e.id }), face(e, 40));
   }).join('')).join('') + ovChip('+ Assumi', '', 'add', 'ov', it('hireOpen', { target: b.id }));
   out.push({ id: 'personale', ic: '👥', title: 'Persone', sum: !emps.length ? 'nessuno' : nBad ? `${nBad} da vedere` : `${emps.length} ok`, bad: !emps.length || nBad > 0, chips: pc, note: `Orari di domani · ${WEEKDAYS[wdNext]}` });
   // prezzi / produzione
@@ -63,17 +63,17 @@ function ovAreas(b) {
     const bad = ((t.stockouts || []).length && st <= 0) || (dl != null && dl < 1) || (st <= 0 && !inc);
     if (bad) so++;
     const auto = b.restock[m] && b.restock[m].on;
-    return ovChip(esc(MATERIALS[m].name) + (auto ? '' : ' <small>manuale</small>'), dl != null ? `${num1(dl)} gg` : `${num1(st)} ${MATERIALS[m].unit}`, bad ? 'bad' : 'ok', 'ov', it('rsSheet', { m }));
+    return ovChip(esc(MATERIALS[m].name) + (auto ? '' : ' <small>manuale</small>'), dl != null ? `${num1(dl)} gg` : `${num1(st)} ${MATERIALS[m].unit}`, bad ? 'bad' : 'ok', 'ov', it('rsSheet', { m }), material(m, 40, bad ? 'low' : 'ok'));
   }).join('');
   out.push({ id: 'magazzino', ic: '📦', title: 'Scorte', sum: so ? `${so} in esaurimento` : 'ok', bad: so > 0, chips: sc, note: 'Durata in giorni' });
   // macchine
   let eb = 0;
   const ec = T.equip.map(e => {
     const own = b.equip[e.cat];
-    if (!own && !e.req) return ovChip(esc(e.n), 'opzionale', 'off', 'ov', it('eqSheet', { c: e.cat }), machine(e, null, 34));
+    if (!own && !e.req) return ovChip(esc(e.n), 'opzionale', 'off', 'ov', it('eqSheet', { c: e.cat }), machine(e, null, 40));
     const bad = !own || own.broken || own.cond < 50;
     if (bad) eb++;
-    return ovChip(esc(e.n), !own ? 'manca' : own.broken ? 'guasta' : Math.round(own.cond) + '%', bad ? 'bad' : 'ok', 'ov', it('eqSheet', { c: e.cat }), machine(e, own, 34));
+    return ovChip(esc(e.n), !own ? 'manca' : own.broken ? 'guasta' : Math.round(own.cond) + '%', bad ? 'bad' : 'ok', 'ov', it('eqSheet', { c: e.cat }), machine(e, own, 40));
   }).join('');
   out.push({ id: 'attrezzature', ic: '🛠️', title: 'Macchine', sum: eb ? `${eb} da vedere` : 'ok', bad: eb > 0, chips: ec });
   return out;
