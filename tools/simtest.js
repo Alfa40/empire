@@ -1,9 +1,9 @@
 // Test headless della simulazione: node tools/simtest.js [tipo] [città] [quartiere] [giorni]
 const fs = require('fs'), path = require('path'), vm = require('vm');
-const files = ['util', 'calendar', 'data', 'state', 'finance', 'business', 'sim', 'shifts', 'advisor', 'events'];
+const files = ['util', 'calendar', 'data', 'state', 'finance', 'business', 'sim', 'shifts', 'advisor', 'events', 'people'];
 let code = files.map(f => fs.readFileSync(path.join(__dirname, '..', 'js', f + '.js'), 'utf8')).join('\n;\n');
 const store = {};
-const ctx = { console, Intl, Math, Date, JSON, localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = v; }, removeItem: k => { delete store[k]; } } };
+const ctx = { ACT: {}, console, Intl, Math, Date, JSON, localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = v; }, removeItem: k => { delete store[k]; } } };
 vm.createContext(ctx);
 code += `
 ;globalThis.__run = function(type, city, district, days, staffPlan){
